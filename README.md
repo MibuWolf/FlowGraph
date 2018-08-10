@@ -19,3 +19,6 @@ core.AddNode
 -cs CS/FlowGraph	(设定生成为CS工程 工程名FlowGraph)
 
 -js JS/FlowGraph.js	(设定生成为JS文件)
+
+
+haxe -main Entry --interp 从主入口执行工程
