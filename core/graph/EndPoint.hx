@@ -1,15 +1,11 @@
 package core.graph;
-import haxe.io.Bytes;
-import core.serialization.ISerializable;
-
-
 
  
 /**
  * 节点插槽关系
  * @author MibuWolf
  */
-class EndPoint implements ISerializable
+class EndPoint
 {
 	private var nodeId(default, null):Int;	//端点id
 	private var slotId(default, null):String; //插槽id
@@ -49,16 +45,11 @@ class EndPoint implements ISerializable
 		slotId = id;
 	}
 	
-	
-	// 序列化为bytes字节数组
-	public function SeriralizeToBytes(bytes:Bytes):Void
+	public function ToString():String
 	{
-		
+		return nodeId + slotId;
 	}
 	
-	// 从bytes字节数组反序列化
-	public function DeserializeFromBytes(bytes:Bytes):Void
-	{
-		
-	}
+	
+	
 }

@@ -1,14 +1,13 @@
 package core.graph;
 import core.node.Node;
 import core.slot.Slot;
-import haxe.io.Bytes;
-import core.serialization.ISerializable;
+import core.datum.Datum;
 
 /**
  * 流图类
  * @author confiner
  */
-class Graph implements ISerializable 
+class Graph
 {
 	private var graphId(default, null):Int;		// 流图id
 	
@@ -16,12 +15,23 @@ class Graph implements ISerializable
 	private var connection:Array<Connection>;		// 所有节点关系
 	private var executStack:ExecutionStack;
 	
+	private var nodeAllResultDataDict:Map<String, Datum>;
+	
 	public function new(graphId:Int = -1) 
 	{
 		this.graphId = graphId;
 		this.nodes = new Map<Int, Node>();
 		this.connection = new Array<Connection>();
 		this.executStack = new ExecutionStack();
+		nodeAllResultDataDict = new Map<String, Datum>();
+	}
+	
+	
+	// 获取流图ID
+
+	public function GetGraphID()
+	{
+		return graphId;
 	}
 	
 	// 开始流图
@@ -62,6 +72,7 @@ class Graph implements ISerializable
 				
 			var endpoint:EndPoint = executStack.Get();
 			var node:Node = GetNode(endpoint.GetNodeID());
+			
 			if (node != null)
 			{
 				// 节点存在则进入节点相应的插槽
@@ -73,7 +84,8 @@ class Graph implements ISerializable
 	// 添加节点
 	public function AddNode(node:Node):Void
 	{
-		this.nodes[node.GetNodeID()] = node;
+
+		this.nodes.set(node.GetNodeID(),node);
 	}
 	
 	
@@ -96,23 +108,13 @@ class Graph implements ISerializable
 	// 添加关系
 	public function AddConnection(sNID:Int, sSID:String, tNID:Int, tSID:String):Bool
 	{
-		var sNode:Node = GetNode(sNID);
-		var tNode:Node = GetNode(tNID);
-		
-		if (sNode == null || tNode == null || FindConnection(sNID, sSID, tNID, tSID) != -1)
+
+		if (FindConnection(sNID, sSID, tNID, tSID) != -1)
 			return false;
-			
-		var sSlot:Slot = sNode.GetSlot(sSID);
-		var tSlot:Slot = sNode.GetSlot(tSID);
-		
-		if (sSlot == null || tSlot == null)
-			return false;
-		
-		if (!tSlot.CanConnect(sSlot.slotType))
-			return false;
-			
+
+
 		var con:Connection = new Connection(sNID, sSID, tNID, tSID);
-		
+	
 		this.connection.push(con);
 		
 		return true;
@@ -147,13 +149,28 @@ class Graph implements ISerializable
 		this.connection.remove(this.connection[index]);
 	}
 	
+	public function GetInTransEndPoint(sNID:Int, sSID:String):EndPoint
+	{
+		//var con:Connection = null;
+		for (con in connection) 
+		{
+			if (con != null && con.IsTargetEndPoint(sNID, sSID))
+			{
+				return con.GetSourceEndPoint();
+			}
+		}
+		
+		return null;
+	}
+	
 	
 	// 根据nodeid slotid查找所有有关的节点数据
 	public function GetAllEndPoints(sNID:Int, sSID:String):Array<EndPoint>
 	{
 		var allEndPoints:Array<EndPoint> = new Array<EndPoint>();
 		
-		var con:Connection = null;
+
+		//var con:Connection = null;
 		for (con in connection)
 		{
 			if (con != null && con.IsSourceEndPoint(sNID, sSID))
@@ -164,18 +181,34 @@ class Graph implements ISerializable
 		
 		return allEndPoints;
 	}
-
-	// 序列化为bytes字节数组
-	public function SeriralizeToBytes(bytes:Bytes):Void
+	
+	public function GetNodeSlotData(sNID:Int, sSID:String):Datum
 	{
-		
+		var endPoint:EndPoint = GetInTransEndPoint(sNID, sSID);
+		if (endPoint == null) 
+		{
+			return null;
+		}
+		var key:String = endPoint.ToString();
+		if (nodeAllResultDataDict.exists(key)) 
+		{
+			return nodeAllResultDataDict.get(key);
+		}
+		return null;
 	}
 	
-		// 从bytes字节数组反序列化
-	public function DeserializeFromBytes(bytes:Bytes):Void
-	{
-		
-		
-	}
 	
+	public function SetNodeResultData(sNID:Int, sSID:String, data:Datum):Void
+	{
+		var endPoint:EndPoint = new EndPoint(sNID, sSID);
+		var key:String = endPoint.ToString();
+		if (!nodeAllResultDataDict.exists(key)) 
+		{
+			nodeAllResultDataDict.set(key, data);
+		}
+		/*for (item in nodeAllResultDataDict.keys()) 
+		{
+			trace(item, nodeAllResultDataDict[item].GetValue());
+		}*/
+	}
 }

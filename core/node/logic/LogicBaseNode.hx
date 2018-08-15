@@ -7,10 +7,9 @@ import core.slot.Slot;
  * ...
  * @author MibuWolf
  */
-class LogicBaseNode extends Node
+class LogicBaseNode extends ExecuteNode
 {
 
-	private var slotIn:String;
 	private var slotTrue:String;
 	private var slotFalse:String;
 	
@@ -18,11 +17,9 @@ class LogicBaseNode extends Node
 	{
 		super(owner);
 		
-		slotIn = "In";
-		slotTrue = "True");
+		slotTrue = "True";
 		slotFalse = "False";
 		
-		AddSlot(Slot.INITIALIZE_SLOT(slotIn, SlotType.ExecutionIn));
 		AddSlot(Slot.INITIALIZE_SLOT(slotTrue, SlotType.ExecutionOut));
 		AddSlot(Slot.INITIALIZE_SLOT(slotFalse, SlotType.ExecutionOut));
 		
@@ -49,12 +46,14 @@ class LogicBaseNode extends Node
 	// 进入该节点进行逻辑评价
 	override public function SignalInput(slotId:String):Void
 	{
-		if (slotIn != slotId)
+		if (inSlotId != slotId)
 			return;
 			
 		var result:Bool = Evaluate();
 		
 		EvaluateResult();
+		
+		SignalOutput(outSlotId);
 		
 		SignalOutput(result ? slotTrue : slotFalse);
 		

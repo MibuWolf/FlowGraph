@@ -2,12 +2,11 @@ package core.graph;
 import core.node.Node;
 import core.slot.Slot;
 import haxe.io.Bytes;
-import core.serialization.ISerializable;
 /**
  * ...
  * @author MibuWolf
  */
-class Connection implements ISerializable
+class Connection
 {
 	// 源
 	private var sourcePoint:EndPoint;
@@ -135,17 +134,11 @@ class Connection implements ISerializable
 		return (sNID == this.sourcePoint.GetNodeID()) && (sSID == this.sourcePoint.GetSlotID() );
 	}
 	
-	
-	// 序列化为bytes字节数组
-	public function SeriralizeToBytes(bytes:Bytes):Void
+	public function IsTargetEndPoint(sNID:Int, sSID:String):Bool
 	{
-		
+		if (this.sourcePoint == null)
+			return false;
+			
+		return (sNID == this.targetPoint.GetNodeID()) && (sSID == this.targetPoint.GetSlotID() );
 	}
-	
-	// 从bytes字节数组反序列化
-	public function DeserializeFromBytes(bytes:Bytes):Void
-	{
-		
-	}
-	
 }

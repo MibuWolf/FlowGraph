@@ -8,22 +8,17 @@ import reflectclass.ReflectHelper;
 import core.graph.EndPoint;
 
 /**
- * ...
+ * 反射逻辑层成员方法
  * @author MibuWolf
  */
-class MethodNode extends Node
-{
-	// 逻辑进入
-	private var inSlotId:String = "In";
-	
-	// 逻辑退出
-	private var outSlotId:String = "Out";
-	
+class MethodNode extends ExecuteNode
+{	
 	// 输入参数插槽
 	private var paramSlots:Array<String>;
 	
 	// 输出参数插槽
-	private var resultSlotID:String;
+
+	private var resultSlotID:String = "Value";
 	
 	// 方法信息
 	private var methodInfo:MethodInfo;
@@ -35,7 +30,8 @@ class MethodNode extends Node
 		
 		type = NodeType.METHOD;
 		paramSlots = new Array<String>();
-		resultSlotID = Slot.InvalidSlot;
+
+		resultSlotID = "Value";
 	}
 	
 	
@@ -48,7 +44,7 @@ class MethodNode extends Node
 		
 		paramSlots = new Array<String>();
 		var params:Array<Datum> = methodInfo.GetAllParam();
-		
+	
 		if (params == null)
 			return true;
 		
@@ -64,13 +60,10 @@ class MethodNode extends Node
 			
 		var result:Datum = methodInfo.GetResult();
 		
-		if (result == null)
-			resultSlotID = Slot.InvalidSlot;
-		else
+		if (result != null)
 		{
-			var resultSlot:Slot = Slot.INITIALIZE_SLOT(result.GetName(), SlotType.DataOut);
+			var resultSlot:Slot = Slot.INITIALIZE_SLOT(resultSlotID, SlotType.DataOut);
 			this.AddDatumSlot(resultSlot, result);
-			resultSlotID = result.GetName();
 		}
 			
 		return true;
@@ -82,45 +75,40 @@ class MethodNode extends Node
 	// 进入该节点进行逻辑评价
 	override public function SignalInput(slotId:String):Void
 	{
-		if (inSlotId != slotId)
-			return;
-			
-		
+
 		if (methodInfo == null)
 			return;
 		
 		var params:Array<Any> = new Array<Any>();
 		
-		for (paramSlots in paramSlots)
+
+		for (paramSlotItem in paramSlots)
 		{
-			var data:Datum = GetSlotData(paramSlots);
-			
-			params.push(data.GetType());
+			var data:Datum = GetSlotData(paramSlotItem);
+			if (data != null) 
+			{
+				data = GetSlotData(paramSlotItem);
+				params.push(data.GetValue());
+			}
+	
+			else
+			{
+				params.push(null);
+			}
 		}
-		
+
 		var result:Any = ReflectHelper.GetInstance().CallSingleMethod(methodInfo.GetClassName(), methodInfo.GetMethodName(), params);
 		
-		if (resultSlotID != Slot.INITIALIZE_SLOT && result != null)
+		if (resultSlotID != Slot.InvalidSlot && result != null)
 		{
-			var resultDatum:Datum = this.GetSlotData(resultSlotID);
+			var resultDefalut:Datum = methodInfo.GetResult();
+			var resultDatum:Datum = resultDefalut.Clone();
+			
 			resultDatum.SetValue(result);
-			this.SetSlotData(resultSlotID, resultDatum);
-			
-			// 获取连线参数传递
-			var allEndPoints:Array<EndPoint> = this.graph.GetAllEndPoints(this.GetNodeID(), resultSlotID);
-			
-			if (allEndPoints != null)
-			{
-				for (nextParamPoint in allEndPoints)
-				{
-					var nextNode:Node = this.graph.GetNode(nextParamPoint.GetNodeID());
-					
-					if (nextNode != null)
-						nextNode.SetSlotData(nextParamPoint.GetSlotID(), resultDatum);
-				}
-			}
-			
-			SignalOutput();
+
+			graph.SetNodeResultData(nodeId, resultSlotID, resultDatum);	
 		}
+
+		SignalOutput( outSlotId);
 	}
 }

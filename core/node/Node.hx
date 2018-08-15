@@ -2,8 +2,6 @@ package core.node;
 import core.datum.Datum;
 import core.graph.Graph;
 import core.slot.Slot;
-import haxe.io.Bytes;
-import core.serialization.ISerializable;
 import core.graph.EndPoint;
 
 /**
@@ -23,7 +21,7 @@ enum NodeType
 	TRIGGER;		// 触发
 }
 
-class Node implements ISerializable
+class Node
 {
 	static public var InvalidNode:Int = -1;
 	// 节点类型
@@ -51,6 +49,9 @@ class Node implements ISerializable
 	{
 		graph = owner;
 		type = NodeType.NORMAL;
+	
+		slots = new Map<String, Slot>();
+		datumMap = new Map<String, Datum>();
 	}
 	
 	public function Initialize(_nodeId:Int, _type:NodeType, _name:String = "", _groupName:String = ""):Void
@@ -59,24 +60,6 @@ class Node implements ISerializable
 		this.name = _name;
 		this.groupName = _groupName;
 		this.type = _type;
-		slots = new Map<String, Slot>();
-		datumMap = new Map<String, Datum>();
-	}
-	
-	
-	// 序列化为bytes字节数组
-	public function SeriralizeToBytes(bytes:Bytes):Void
-	{
-		
-		
-	}
-	
-	
-	// 从bytes字节数组反序列化
-	public function DeserializeFromBytes(bytes:Bytes):Void
-	{
-		
-		
 	}
 	
 	
@@ -91,7 +74,7 @@ class Node implements ISerializable
 	public function AddSlot(slot:Slot):Void
 	{
 		if(slot != null)
-			this.slots[slot.slotId] = slot;
+			slots.set(slot.slotId, slot);
 	}
 
 	
@@ -100,9 +83,9 @@ class Node implements ISerializable
 	{
 		if (slot == null)
 			return;
-			
-		this.slots[slot.slotId] = slot;
-		this.datumMap[slot.slotId] = data;
+		
+		slots.set(slot.slotId, slot);
+		this.datumMap.set(slot.slotId, data);
 	}
 	
 	
@@ -115,23 +98,35 @@ class Node implements ISerializable
 		return null;
 	}
 	
-	
-	// 设置插槽数据
-	public function SetSlotData(slotId:String, data:Datum):Void
-	{
-		datumMap[slotId] = data;
-	}
-
-	
 	// 获取对应插槽id的插槽数据
 	public function GetSlotData(slotId:String):Datum
 	{
-		if(datumMap.exists(slotId))
+		var data:Datum = graph.GetNodeSlotData(this.nodeId, slotId);
+		if (data!= null) 
 		{
-			return this.datumMap.get(slotId);
+			return data;
 		}
-		
-		return null;
+		else
+		{
+			var inEndPoint:EndPoint = this.graph.GetInTransEndPoint(this.GetNodeID(), slotId);
+			if (inEndPoint == null) 
+			{
+				data = graph.GetNodeSlotData(this.nodeId, slotId);
+				if (data == null) 
+				{
+					return null;
+				}
+				else
+				{
+					return data;
+				}
+			}
+			trace(nodeId, slotId);
+			var node:Node = graph.GetNode(inEndPoint.GetNodeID());
+			node.SignalInput(null);
+			data = graph.GetNodeSlotData(this.nodeId, slotId);
+		}
+		return data;
 	}
 	
 	// 获取对应插槽id的插槽数据类型
@@ -149,7 +144,7 @@ class Node implements ISerializable
 	// 逻辑输入插槽执行
 	public function SignalInput(slotId:String):Void
 	{
-		
+		trace("=============== " + this.nodeId);
 	}
 	
 	
@@ -158,7 +153,7 @@ class Node implements ISerializable
 	{
 		if (graph == null)
 			return;
-			
+		
 		var executionCheckRequired = false;
 		
 		if (slotId != Slot.InvalidSlot)
@@ -169,7 +164,6 @@ class Node implements ISerializable
 			{
 				// 查找关系
 				var endpoints:Array<EndPoint> = graph.GetAllEndPoints(nodeId, slotId);
-				
 				for (endpoint in endpoints)
 				{
 					// 能否查找出下个节点

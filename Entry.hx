@@ -6,18 +6,133 @@ package;
  * @see 程序入口
  */
  import core.node.Node;
+ import core.node.event.GraphStartNode;
+ import core.node.logic.IfNode;
+ import core.node.reflect.MethodNode;
+ import core.node.reflect.TriggerNode;
+ import core.serialization.laybox.LayBoxGraphData;
+ import core.serialization.laybox.LayBoxNodeData;
  import core.slot.Slot;
  import core.graph.EndPoint;
  import haxe.Json;
+ import reflectclass.MethodInfo;
  import reflectclass.ReflectHelper;
  import test.Student;
+ import test.StudentMgr;
+ import test.TestOutPut;
  import core.graph.Graph;
  import core.slot.Slot.SlotType;
- 
+ import core.graphmanager.GraphManager;
 class Entry 
 {
 	public static function main() :Void
 	{
+		// 测试Graph
+		
+		StudentMgr.GetInstance().ReflectToGraph();
+		TestOutPut.GetInstance().ReflectToGraph();
+		/**
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		var graph:Graph = new Graph(1);
+		GraphManager.GetInstance().AddGraph(graph);
+		var add1:MethodNode = new MethodNode(graph);
+		add1.Initialize(1, NodeType.METHOD, "AddStudent", "StudentMgr");
+		add1.Initialization(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetMethod("AddStudent"));
+		graph.AddNode(add1);
+		
+		var add2:MethodNode = new MethodNode(graph);
+		add2.Initialize(2, NodeType.METHOD, "AddStudent", "StudentMgr");
+		add2.Initialization(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetMethod("AddStudent"));
+		graph.AddNode(add2);
+		
+		var add7:MethodNode = new MethodNode(graph);
+		add7.Initialize(7, NodeType.METHOD, "GetStudent1Age", "StudentMgr");
+		add7.Initialization(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetMethod("GetStudent1Age"));
+		graph.AddNode(add7);
+		
+		var add8:MethodNode = new MethodNode(graph);
+		add8.Initialize(8, NodeType.METHOD, "GetStudent2Age", "StudentMgr");
+		add8.Initialization(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetMethod("GetStudent2Age"));
+		graph.AddNode(add8);
+		
+		var com:MethodNode = new MethodNode(graph);
+		com.Initialize(3, NodeType.METHOD, "Compare", "StudentMgr");
+		com.Initialization(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetMethod("Compare"));
+		graph.AddNode(com);
+		
+		var ifNode:IfNode = new IfNode(graph);
+		ifNode.Initialize(4, NodeType.LOGIC, "IF", "Logic");
+		graph.AddNode(ifNode);
+		
+		var output:MethodNode = new MethodNode(graph);
+		output.Initialization(ReflectHelper.GetInstance().GetClassInfo("TestOutPut").GetMethod("Output"));
+		output.Initialize(5, NodeType.METHOD, "Output", "TestOutPut");
+		graph.AddNode(output);
+		
+		var triggerNode:TriggerNode = new TriggerNode(graph);
+		triggerNode.Initialize(6, NodeType.METHOD, "OnTrigger", "StudentMgr");
+		triggerNode.Initialization(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetCallBack("OnTrigger"));
+		graph.AddNode(triggerNode);
+		
+		var star:GraphStartNode = new GraphStartNode(graph);
+		star.Initialize(0, NodeType.LOGIC, "start", "start");
+		graph.AddNode(star);
+		
+		
+		graph.AddConnection(0, "Out", 1, "In");
+		graph.AddConnection(1, "Out", 2, "In");
+		graph.AddConnection(7, "Result", 1, "age");
+		graph.AddConnection(8, "Result", 2, "age");
+		graph.AddConnection(1, "Result", 3, "ida");
+		graph.AddConnection(2, "Result", 3, "idb");
+		graph.AddConnection(2, "Out", 3, "In");
+		graph.AddConnection(3, "Out", 4, "In");
+		graph.AddConnection(3, "Result", 4, "Condition");
+		graph.AddConnection(4, "False", 5, "In");
+		graph.AddConnection(6,"Out",5,"In");
+
+		star.OnTrigger();
+		
+		/*StudentMgr.GetInstance().OnTrigger(1);
+		
+		var layboxNode:LayBoxNodeData = new LayBoxNodeData();
+		var str:String = LayBoxNodeData.MethodInfoToJson(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetMethod("Compare"));
+		
+		var newMethod:MethodInfo = LayBoxNodeData.MethodInfoFromJson(str);
+		var strnew:String = LayBoxNodeData.MethodInfoToJson(newMethod);
+		
+
+		//trace(strnew);
+		
+		
+		
+		
+		
+		**/
+	
+		var testGraphData = { name:"testName", "0":{name:"GetTest",category:"StudentMgr",next:{Out:[1]} },"1":{name:"Log",category:"TestOutPut",input:{Value:{node_id:0,pin:"Value"}} }
+		};
+		
+		//var testGraphData = {name:"string"};
+		var strJosn:String = Json.stringify(testGraphData);
+	
+		var graph1:Graph = LayBoxGraphData.GetInstance().GraphFormJson(strJosn);
+		//trace(graph1);
+		
+		var star:GraphStartNode = new GraphStartNode(graph1);
+		star.Initialize(10, NodeType.LOGIC, "start", "start");
+		graph1.AddNode(star);
+		
+		graph1.AddConnection(10, "Out", 0, "In");
+		
+		//trace(graph1);
+		star.OnTrigger();
+		return;
 		// 测试生成项目
 		//trace("Hello World Hlll");
 		
@@ -26,22 +141,22 @@ class Entry
 		//var age:Int = func;
 		//trace(age);
 		
-		var test:Student = new Student("asd",1);
-		test.SetAge(1000);
+	//	var test:Student = new Student("asd",1);
+	//	test.SetAge(1000);
 		
-		ReflectHelper.GetInstance().InitializationSingleClass("Student", test);
-		var age:Int = 1;
-		age = ReflectHelper.GetInstance().CallSingleMethod("Student", "GetAge", [] );
+	//	ReflectHelper.GetInstance().InitializationSingleClass("Student", test);
+	//	var age:Int = 1;
+	//	age = ReflectHelper.GetInstance().CallSingleMethod("Student", "GetAge", [] );
 		
-		if (!Reflect.hasField(test, "GetAge"))
-			{
-				trace("==============44444444444");
-			}
+	//	if (!Reflect.hasField(test, "GetAge"))
+	//		{
+	//			trace("==============44444444444");
+	//		}
 			
 		
 		//var func = Reflect.callMethod(test, Reflect.field(test, "GetAge"), []);
 		//var age:Int = func;
-		trace(age);
+	//	trace(age);
 		
 		//var st:Student = new Student();
 		//var fc = Reflect.callMethod(st, Reflect.field(st, "GetName"), []);

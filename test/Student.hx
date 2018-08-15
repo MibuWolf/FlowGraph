@@ -11,7 +11,7 @@ class Student
 {
 
 	private var _name:String;
-	private var _age:Int;
+	private var _age:Int = 0;
 	
 	//public function new() 
 	//{
@@ -38,6 +38,7 @@ class Student
 	{
 		this._age = age;
 	}
+	
 	
 	@:keep
 	 function hxSerialize(s:Serializer) 

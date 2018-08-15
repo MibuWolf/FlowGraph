@@ -1,5 +1,4 @@
 package core.slot;
-import core.serialization.ISerializable;
 import haxe.io.Bytes;
 
 
@@ -19,7 +18,7 @@ enum SlotType
 }
 
 
-class Slot implements ISerializable
+class Slot
 {
 	static public var InvalidSlot:String = "";
 
@@ -76,19 +75,5 @@ class Slot implements ISerializable
 		slot.Initialize(id, type);
         
 		return slot;
-	}
-
-	
-		// 序列化为bytes
-	public function SeriralizeToBytes(bytes:Bytes):Void
-	{
-		
-	}
-	
-	
-	// 从bytes反序列化
-	public function DeserializeFromBytes(bytes:Bytes):Void
-	{
-		
 	}
 }

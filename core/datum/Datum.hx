@@ -1,5 +1,4 @@
 package core.datum;
-import core.serialization.ISerializable;
 import haxe.io.Bytes;
 
 
@@ -20,7 +19,7 @@ enum DatumType
 }
 
 // 插槽数据
- class Datum implements ISerializable
+ class Datum
  {
 	public static var  INVALID:String = "";
 	private var type(default, default):DatumType;		// 数据类型
@@ -73,6 +72,7 @@ enum DatumType
 	{
 		return value;
 	}
+
 	
 	
 	// 获取数据名称
@@ -96,21 +96,6 @@ enum DatumType
 	public function SetValue(valueAny:Any):Void
 	{
 			this.value = valueAny;
-	}
-	
-	
-	// 序列化为bytes字节数组
-	public function SeriralizeToBytes(bytes:Bytes):Void
-	{
-		
-		
-	}
-	
-	// 从bytes字节数组反序列化
-	public function DeserializeFromBytes(bytes:Bytes):Void
-	{
-		
-		
 	}
 	
 	
@@ -151,11 +136,21 @@ enum DatumType
 	}
 	
 	
-	public static function INITIALIZE_UNDEFAULT(vType:DatumType, defaultValue:String = "")
+	public static function INITIALIZE_UNDEFAULT(vType:DatumType, defaultName:String = "Value")
 	{
 
 		var data:Datum = new Datum();
-		data.Initialize(vType, null, defaultValue);
+		data.Initialize(vType, null, defaultName);
+        
+		return data;
+	}
+	
+	
+	public static function INITIALIZE_DATUM(vType:DatumType, value:Any, defaultName:String = "Value")
+	{
+
+		var data:Datum = new Datum();
+		data.Initialize(vType, value, defaultName);
         
 		return data;
 	}

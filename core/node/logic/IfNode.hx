@@ -9,15 +9,15 @@ import core.slot.Slot;
 class IfNode extends LogicBaseNode
 {
 
-	private var slotCondition:Int;
+	private var slotCondition:String;
 	
 	public function new(owner:Graph) 
 	{
 		super(owner);
 		
-		slotCondition = AllocationSlotIndex();
+		slotCondition = "Condition";
 		
-		AddDatumSlot(Slot.INITIALIZE_SLOT(slotCondition, SlotType.DataIn, "Condition"),Datum.INITIALIZE_BOOL());
+		AddDatumSlot(Slot.INITIALIZE_SLOT(slotCondition, SlotType.DataIn),Datum.INITIALIZE_BOOL());
 	}
 	
 	
@@ -28,7 +28,7 @@ class IfNode extends LogicBaseNode
 		
 		if (data == null)
 			return false;
-			
+		
 		return data.GetValue();
 	}
 	
