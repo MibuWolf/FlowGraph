@@ -28,7 +28,7 @@ class IfNode extends LogicBaseNode
 		
 		if (data == null)
 			return false;
-		
+			
 		return data.GetValue();
 	}
 	

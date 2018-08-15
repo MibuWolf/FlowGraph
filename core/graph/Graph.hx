@@ -1,7 +1,6 @@
 package core.graph;
 import core.node.Node;
 import core.slot.Slot;
-import core.datum.Datum;
 
 /**
  * 流图类
@@ -15,20 +14,16 @@ class Graph
 	private var connection:Array<Connection>;		// 所有节点关系
 	private var executStack:ExecutionStack;
 	
-	private var nodeAllResultDataDict:Map<String, Datum>;
-	
 	public function new(graphId:Int = -1) 
 	{
 		this.graphId = graphId;
 		this.nodes = new Map<Int, Node>();
 		this.connection = new Array<Connection>();
 		this.executStack = new ExecutionStack();
-		nodeAllResultDataDict = new Map<String, Datum>();
 	}
 	
 	
 	// 获取流图ID
-
 	public function GetGraphID()
 	{
 		return graphId;
@@ -84,7 +79,6 @@ class Graph
 	// 添加节点
 	public function AddNode(node:Node):Void
 	{
-
 		this.nodes.set(node.GetNodeID(),node);
 	}
 	
@@ -108,15 +102,12 @@ class Graph
 	// 添加关系
 	public function AddConnection(sNID:Int, sSID:String, tNID:Int, tSID:String):Bool
 	{
-
 		if (FindConnection(sNID, sSID, tNID, tSID) != -1)
 			return false;
 
-
 		var con:Connection = new Connection(sNID, sSID, tNID, tSID);
-	
 		this.connection.push(con);
-		
+
 		return true;
 	}
 	
@@ -149,28 +140,13 @@ class Graph
 		this.connection.remove(this.connection[index]);
 	}
 	
-	public function GetInTransEndPoint(sNID:Int, sSID:String):EndPoint
-	{
-		//var con:Connection = null;
-		for (con in connection) 
-		{
-			if (con != null && con.IsTargetEndPoint(sNID, sSID))
-			{
-				return con.GetSourceEndPoint();
-			}
-		}
-		
-		return null;
-	}
-	
 	
 	// 根据nodeid slotid查找所有有关的节点数据
 	public function GetAllEndPoints(sNID:Int, sSID:String):Array<EndPoint>
 	{
 		var allEndPoints:Array<EndPoint> = new Array<EndPoint>();
 		
-
-		//var con:Connection = null;
+		var con:Connection = null;
 		for (con in connection)
 		{
 			if (con != null && con.IsSourceEndPoint(sNID, sSID))
@@ -182,33 +158,4 @@ class Graph
 		return allEndPoints;
 	}
 	
-	public function GetNodeSlotData(sNID:Int, sSID:String):Datum
-	{
-		var endPoint:EndPoint = GetInTransEndPoint(sNID, sSID);
-		if (endPoint == null) 
-		{
-			return null;
-		}
-		var key:String = endPoint.ToString();
-		if (nodeAllResultDataDict.exists(key)) 
-		{
-			return nodeAllResultDataDict.get(key);
-		}
-		return null;
-	}
-	
-	
-	public function SetNodeResultData(sNID:Int, sSID:String, data:Datum):Void
-	{
-		var endPoint:EndPoint = new EndPoint(sNID, sSID);
-		var key:String = endPoint.ToString();
-		if (!nodeAllResultDataDict.exists(key)) 
-		{
-			nodeAllResultDataDict.set(key, data);
-		}
-		/*for (item in nodeAllResultDataDict.keys()) 
-		{
-			trace(item, nodeAllResultDataDict[item].GetValue());
-		}*/
-	}
 }

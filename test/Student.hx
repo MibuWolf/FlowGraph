@@ -11,7 +11,7 @@ class Student
 {
 
 	private var _name:String;
-	private var _age:Int = 0;
+	private var _age:Int;
 	
 	//public function new() 
 	//{

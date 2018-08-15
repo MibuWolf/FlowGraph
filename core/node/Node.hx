@@ -98,35 +98,23 @@ class Node
 		return null;
 	}
 	
+	
+	// 设置插槽数据
+	public function SetSlotData(slotId:String, data:Datum):Void
+	{
+		datumMap.set(slotId, data);
+	}
+
+	
 	// 获取对应插槽id的插槽数据
 	public function GetSlotData(slotId:String):Datum
 	{
-		var data:Datum = graph.GetNodeSlotData(this.nodeId, slotId);
-		if (data!= null) 
+		if(datumMap.exists(slotId))
 		{
-			return data;
+			return this.datumMap.get(slotId);
 		}
-		else
-		{
-			var inEndPoint:EndPoint = this.graph.GetInTransEndPoint(this.GetNodeID(), slotId);
-			if (inEndPoint == null) 
-			{
-				data = graph.GetNodeSlotData(this.nodeId, slotId);
-				if (data == null) 
-				{
-					return null;
-				}
-				else
-				{
-					return data;
-				}
-			}
-			trace(nodeId, slotId);
-			var node:Node = graph.GetNode(inEndPoint.GetNodeID());
-			node.SignalInput(null);
-			data = graph.GetNodeSlotData(this.nodeId, slotId);
-		}
-		return data;
+		
+		return null;
 	}
 	
 	// 获取对应插槽id的插槽数据类型
@@ -144,7 +132,7 @@ class Node
 	// 逻辑输入插槽执行
 	public function SignalInput(slotId:String):Void
 	{
-		trace("=============== " + this.nodeId);
+		
 	}
 	
 	

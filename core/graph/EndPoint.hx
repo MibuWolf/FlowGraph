@@ -45,11 +45,4 @@ class EndPoint
 		slotId = id;
 	}
 	
-	public function ToString():String
-	{
-		return nodeId + slotId;
-	}
-	
-	
-	
 }

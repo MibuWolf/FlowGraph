@@ -50,16 +50,6 @@ class Entry
 		add2.Initialization(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetMethod("AddStudent"));
 		graph.AddNode(add2);
 		
-		var add7:MethodNode = new MethodNode(graph);
-		add7.Initialize(7, NodeType.METHOD, "GetStudent1Age", "StudentMgr");
-		add7.Initialization(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetMethod("GetStudent1Age"));
-		graph.AddNode(add7);
-		
-		var add8:MethodNode = new MethodNode(graph);
-		add8.Initialize(8, NodeType.METHOD, "GetStudent2Age", "StudentMgr");
-		add8.Initialization(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetMethod("GetStudent2Age"));
-		graph.AddNode(add8);
-		
 		var com:MethodNode = new MethodNode(graph);
 		com.Initialize(3, NodeType.METHOD, "Compare", "StudentMgr");
 		com.Initialization(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetMethod("Compare"));
@@ -86,19 +76,17 @@ class Entry
 		
 		graph.AddConnection(0, "Out", 1, "In");
 		graph.AddConnection(1, "Out", 2, "In");
-		graph.AddConnection(7, "Result", 1, "age");
-		graph.AddConnection(8, "Result", 2, "age");
 		graph.AddConnection(1, "Result", 3, "ida");
 		graph.AddConnection(2, "Result", 3, "idb");
 		graph.AddConnection(2, "Out", 3, "In");
 		graph.AddConnection(3, "Out", 4, "In");
 		graph.AddConnection(3, "Result", 4, "Condition");
-		graph.AddConnection(4, "False", 5, "In");
+		graph.AddConnection(4, "True", 5, "In");
 		graph.AddConnection(6,"Out",5,"In");
-
+		//graph.AddConnection(4,"False",5,"In");
 		star.OnTrigger();
 		
-		/*StudentMgr.GetInstance().OnTrigger(1);
+		StudentMgr.GetInstance().OnTrigger(1);
 		
 		var layboxNode:LayBoxNodeData = new LayBoxNodeData();
 		var str:String = LayBoxNodeData.MethodInfoToJson(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetMethod("Compare"));
@@ -106,7 +94,6 @@ class Entry
 		var newMethod:MethodInfo = LayBoxNodeData.MethodInfoFromJson(str);
 		var strnew:String = LayBoxNodeData.MethodInfoToJson(newMethod);
 		
-
 		//trace(strnew);
 		
 		

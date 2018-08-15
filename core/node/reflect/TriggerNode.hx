@@ -58,7 +58,7 @@ class TriggerNode extends EventNode
 			var index:Int = 0;
 			for (data in params)
 			{
-				//this.SetSlotData(paramSlots[index], data);
+				this.SetSlotData(paramSlots[index], data);
 				
 				// 获取连线参数传递
 				var allEndPoints:Array<EndPoint> = this.graph.GetAllEndPoints(this.GetNodeID(), paramSlots[index]);
@@ -69,9 +69,8 @@ class TriggerNode extends EventNode
 					{
 						var nextNode:Node = this.graph.GetNode(nextParamPoint.GetNodeID());
 					
-						/**
 						if (nextNode != null)
-							nextNode.SetSlotData(nextParamPoint.GetSlotID(), data);*/
+							nextNode.SetSlotData(nextParamPoint.GetSlotID(), data);
 					}
 				}
 				

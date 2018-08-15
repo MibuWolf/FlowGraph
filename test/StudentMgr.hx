@@ -33,7 +33,6 @@ class StudentMgr
 	
 	public function AddStudent(name:String, age:Int):Int
 	{
-		trace("+++++++++++"+name,age);
 		var std:Student = new Student(name, age);
 		var id:Int = curIndex ++;
 		
@@ -42,15 +41,7 @@ class StudentMgr
 		return id;
 	}
 	
-	public function GetStudent1Age():Int
-	{
-		return 10;
-	}
 	
-	public function GetStudent2Age():Int
-	{
-		return 10;
-	}
 	
 	public function Compare(id1:Int, id2:Int):Bool
 	{
@@ -61,7 +52,7 @@ class StudentMgr
 		{
 			var std1:Student = allStudents.get(id1);
 			var std2:Student = allStudents.get(id2);
-			//trace(std1.GetAge(), std2.GetAge());
+			
 			return std1.GetAge() == std2.GetAge();
 		}
 	}
@@ -84,10 +75,6 @@ class StudentMgr
 	{
 		ReflectHelper.GetInstance().RegisterClass("StudentMgr")
 			.RegisterMethod("AddStudent", [Datum.INITIALIZE_STRING("name"), Datum.INITIALIZE_INT("age")], Datum.INITIALIZE_UNDEFAULT(DatumType.INT));
-		ReflectHelper.GetInstance().RegisterClass("StudentMgr")
-			.RegisterMethod("GetStudent1Age", null, Datum.INITIALIZE_UNDEFAULT(DatumType.INT));
-		ReflectHelper.GetInstance().RegisterClass("StudentMgr")
-			.RegisterMethod("GetStudent2Age", null, Datum.INITIALIZE_UNDEFAULT(DatumType.INT));
 		ReflectHelper.GetInstance().RegisterClass("StudentMgr")
 			.RegisterMethod("Compare", [Datum.INITIALIZE_INT("ida"), Datum.INITIALIZE_INT("idb")], Datum.INITIALIZE_UNDEFAULT(DatumType.BOOL));
 		ReflectHelper.GetInstance().RegisterClass("StudentMgr")
