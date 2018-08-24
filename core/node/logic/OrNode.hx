@@ -19,9 +19,9 @@ class OrNode extends LogicBaseNode
 		
 		paramSlot1 = "Param1";
 		paramSlot2 = "Param2";
-		
-		AddDatumSlot(Slot.INITIALIZE_SLOT(paramSlot1, SlotType.DataIn), Datum.INITIALIZE_BOOL());
-		AddDatumSlot(Slot.INITIALIZE_SLOT(paramSlot2, SlotType.DataIn),Datum.INITIALIZE_BOOL());
+		name = "Or";
+		AddDatumSlot(Slot.INITIALIZE_SLOT(paramSlot1, SlotType.DataIn), Datum.INITIALIZE_BOOL(paramSlot1));
+		AddDatumSlot(Slot.INITIALIZE_SLOT(paramSlot2, SlotType.DataIn),Datum.INITIALIZE_BOOL(paramSlot2));
 	}
 	
 	

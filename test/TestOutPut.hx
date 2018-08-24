@@ -42,6 +42,11 @@ class TestOutPut
 		trace(str);
 	}
 	
+	public function LogInt(iValue:Int):Void
+	{
+		trace(iValue);
+	}
+	
 	
 	public  function ReflectToGraph():Void
 	{
@@ -51,6 +56,10 @@ class TestOutPut
 			
 		ReflectHelper.GetInstance().RegisterClass("TestOutPut")
 			.RegisterMethod("Log", [Datum.INITIALIZE_STRING("Value")]);	
+			
+			
+		ReflectHelper.GetInstance().RegisterClass("TestOutPut")
+			.RegisterMethod("LogInt", [Datum.INITIALIZE_INT("iValue")]);	
 			
 		ReflectHelper.GetInstance().InitializationSingleClass("TestOutPut", this);
 	}

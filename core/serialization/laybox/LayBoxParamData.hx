@@ -1,6 +1,6 @@
 package core.serialization.laybox;
 import core.datum.Datum;
-
+import reflectclass.ReflectHelper;
 /**
  * ...
  * @author MibuWolf
@@ -40,6 +40,14 @@ class LayBoxParamData
 				
 		if(type == DatumType.STRING)
 			return "string";
+			
+		if (type == DatumType.USERID)
+			return "userid";
+			
+		if (type == DatumType.VECTOR3) 
+		{
+			return "vector3";
+		}
 		
 		return "Invalid";
 	}
@@ -59,9 +67,72 @@ class LayBoxParamData
 				
 		if(type == "string")
 			return DatumType.STRING;
+			
+		if(type == "userid")
+			return DatumType.USERID;
+			
+		if(type == "vector3")
+			return DatumType.VECTOR3;
 		
 		return DatumType.INVALID;
 	}
+	
+	public function StrToAny(data:Any, type:DatumType):Any
+	{
+		if (data == null)
+			return null;
+			
+		if (type == DatumType.BOOL)
+		{
+			if (data == "0" || data == "" || data == "false" || data == "False" || data == "FALSE")
+				return false;
+			return true;
+		}
+		
+		if (type == DatumType.INT)
+		{
+			if (data == "")
+				return 0;
+				
+			return Std.parseInt(data);
+		}
+		
+		if (type == DatumType.FLOAT)
+		{
+			if (data == "")
+				return 0.0;
+				
+			return Std.parseFloat(data);
+		}
+		
+		if (type == DatumType.STRING)
+		{
+			var strData:String = data;
+				
+			return strData;
+		}
+		
+		if (type == DatumType.VECTOR3)
+		{
+			var vecValue:Array<Any> = data;
+			
+			if(vecValue == null)
+				return ReflectHelper.GetInstance().CreateLogicData("vector3", 0.0, 0.0, 0.0);
+				
+			return ReflectHelper.GetInstance().CreateLogicData("vector3",Std.parseFloat(vecValue[0]),Std.parseFloat(vecValue[1]),Std.parseFloat(vecValue[2]));
+		}
+		
+		if (type == DatumType.USERID)
+		{
+			if(data != "")
+				return ReflectHelper.GetInstance().CreateLogicData("userid", Std.parseInt(data));
+			else
+				return null;
+		}
+		
+		return data;
+	}
+
 	
 	
 	public function GetMapData(datum:Datum):Map<String,Map<String,Any>>
@@ -73,9 +144,26 @@ class LayBoxParamData
 		var dataValue:Map<String,Any> = new Map<String, Any>();
 		
 		if (datum.GetValue() == null)
-			dataValue.set(GetTypeName(datum.GetType()), "lock");
+			dataValue.set(GetTypeName(datum.GetDatumType()), "lock");
 		else
-			dataValue.set(GetTypeName(datum.GetType()), datum.GetValue());
+		{
+			if (datum.GetDatumType() == DatumType.VECTOR3) 
+			{
+				var xV: Any = Reflect.field(datum.GetValue(), "x");
+				var yV: Any = Reflect.field(datum.GetValue(), "y");
+				var zV: Any = Reflect.field(datum.GetValue(), "z");
+				var param:Array<Float> = new Array<Float>();
+				param.push(xV);
+				param.push(yV);
+				param.push(zV);
+				dataValue.set(GetTypeName(datum.GetDatumType()), param);
+			}
+			else
+			{
+				dataValue.set(GetTypeName(datum.GetDatumType()), datum.GetValue());
+			}
+			
+		}
 			
 		data.set(datum.GetName(), dataValue);
 		

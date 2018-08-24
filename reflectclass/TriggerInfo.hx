@@ -13,8 +13,6 @@ class TriggerInfo
 	private var methodName:String;
 	// 输入参数类型及默认值
 	private var params:Array<Datum>;
-	// 参数个数
-	private var paramCount:Int;
 	
 	
 	public function new(cName:String, mName:String) 
@@ -23,7 +21,6 @@ class TriggerInfo
 		methodName = mName;
 		
 		params = new Array<Datum>();
-		paramCount = 0;
 		
 	}
 	
@@ -46,14 +43,12 @@ class TriggerInfo
 	{
 		if(param != null)
 			params.push(param);
-			
-		paramCount = params.length;
 	}
 	
 	// 设置参数值
 	public function SetParamValue(index:Int, value:Any):Void
 	{
-		if (index < 0 || index >= paramCount)
+		if (index < 0)
 			return;
 			
 		var datum:Datum = params[index];
@@ -68,7 +63,7 @@ class TriggerInfo
 	// 获取参数值
 	public function GetParamValue(index:Int):Any
 	{
-		if (index < 0 || index >= paramCount)
+		if (index < 0)
 			return null;	
 			
 		var datum:Datum = params[index];
@@ -80,10 +75,51 @@ class TriggerInfo
 	}
 	
 	
+	public function SetDefaultEntityID(entityID:Int):Void
+	{
+		for (param in params)
+		{
+			if (param.GetDatumType() == DatumType.USERID) 
+			{
+				param.SetValue(ReflectHelper.GetInstance().CreateLogicData("userid",entityID));
+			}
+		}
+	}
+	
+	
 	// 获取所有参数
 	public function GetAllParam():Array<Datum>
 	{
 		return params;
 	}
+	
+	
+	// 获取参数类型
+	public function GetParamType(name:String):DatumType
+	{
+		for (param in params)
+		{
+			if (param != null && param.GetName() == name)
+			{
+				return param.GetDatumType();
+			}
+		}
+		
+		return DatumType.INVALID;
+	}
+	
+	
+	// 设置参数值
+	public function SetParam(name:String, value:Any):Void
+	{
+		for (param in params)
+		{
+			if (param != null && param.GetName() == name)
+			{
+				param.SetValue(value);
+			}
+		}
+	}
+	
 	
 }

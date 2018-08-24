@@ -28,7 +28,7 @@ class EndPointPools
 	
 	
 	// 获取EndPoint
-	public function GetEndPoint(nodeID:Int = -1, slotID:Int = -1):EndPoint
+	public function GetEndPoint(nodeID:Int = -1, slotID:String = ""):EndPoint
 	{
 		if (pools.isEmpty())
 			return new EndPoint(nodeID, slotID);

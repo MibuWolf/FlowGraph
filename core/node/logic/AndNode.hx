@@ -16,12 +16,12 @@ class AndNode extends LogicBaseNode
 	public function new(owner:Graph) 
 	{
 		super(owner);
-		
+		name = "And";
 		paramSlot1 = "Param1";
 		paramSlot2 = "Param2";
 		
-		AddDatumSlot(Slot.INITIALIZE_SLOT(paramSlot1, SlotType.DataIn), Datum.INITIALIZE_BOOL());
-		AddDatumSlot(Slot.INITIALIZE_SLOT(paramSlot2, SlotType.DataIn),Datum.INITIALIZE_BOOL());
+		AddDatumSlot(Slot.INITIALIZE_SLOT(paramSlot1, SlotType.DataIn), Datum.INITIALIZE_BOOL("Param1"));
+		AddDatumSlot(Slot.INITIALIZE_SLOT(paramSlot2, SlotType.DataIn),Datum.INITIALIZE_BOOL("Param2"));
 	}
 	
 	

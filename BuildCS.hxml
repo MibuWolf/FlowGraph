@@ -6,4 +6,58 @@ reflectclass.MethodInfo
 reflectclass.ClassInfo
 reflectclass.ReflectHelper
 
--cs CS/FlowGraph
+-cp core/graph/
+core.graph.Connection
+core.graph.EndPoint
+core.graph.EndPointPools
+core.graph.ExecutionStack
+core.graph.Graph
+
+-cp core/manager/
+core.manager.GraphManager
+core.manager.GraphTriggerManager
+
+-cp core/manager/trigger
+core.manager.trigger.GraphTriggerInfo
+core.manager.trigger.TriggerCondition
+
+-cp core/node/
+core.node.ExecuteNode
+core.node.Node
+
+-cp core/node/event/
+core.node.event.TriggerNode
+core.node.event.GraphStartNode
+
+-cp core/node/logic/
+core.node.logic.AndNode
+core.node.logic.IfNode
+core.node.logic.LogicBaseNode
+core.node.logic.NotNode
+core.node.logic.OrNode
+core.node.logic.FloatCompareNode
+core.node.logic.StringCompareNode
+
+-cp core/node/graphnode/
+core.node.graphnode.GraphNode
+
+-cp core/node/reflect/
+core.node.reflect.MethodNode
+core.node.reflect.ReflectTriggerNode
+
+
+-cp core/serialization/laybox/
+core.serialization.laybox.LayBoxGraphData
+core.serialization.laybox.LayBoxNodeData
+core.serialization.laybox.LayBoxParamData
+
+-cp core/slot/
+core.slot.Slot
+
+#-cp test/
+#test.Student
+#test.StudentMgr
+#test.TestOutPut
+
+-cs CS/FlowGraph 
+-D no-root

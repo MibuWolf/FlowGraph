@@ -134,5 +134,11 @@ class Connection
 		return (sNID == this.sourcePoint.GetNodeID()) && (sSID == this.sourcePoint.GetSlotID() );
 	}
 	
-	
+	public function IsTargetEndPoint(sNID:Int, sSID:String):Bool
+	{
+		if (this.sourcePoint == null)
+			return false;
+			
+		return (sNID == this.targetPoint.GetNodeID()) && (sSID == this.targetPoint.GetSlotID() );
+	}
 }

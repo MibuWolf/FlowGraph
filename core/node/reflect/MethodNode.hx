@@ -17,6 +17,7 @@ class MethodNode extends ExecuteNode
 	private var paramSlots:Array<String>;
 	
 	// 输出参数插槽
+
 	private var resultSlotID:String = "Value";
 	
 	// 方法信息
@@ -29,6 +30,7 @@ class MethodNode extends ExecuteNode
 		
 		type = NodeType.METHOD;
 		paramSlots = new Array<String>();
+
 		resultSlotID = "Value";
 	}
 	
@@ -42,6 +44,7 @@ class MethodNode extends ExecuteNode
 		
 		paramSlots = new Array<String>();
 		var params:Array<Datum> = methodInfo.GetAllParam();
+	
 		if (params == null)
 			return true;
 		
@@ -68,49 +71,61 @@ class MethodNode extends ExecuteNode
 	}
 	
 	
-	
 	// 进入该节点进行逻辑评价
 	override public function SignalInput(slotId:String):Void
 	{
-		if (inSlotId != slotId)
+		if (methodInfo == null || CheckDeActivate(slotId))
 			return;
 			
-		if (methodInfo == null)
-			return;
-		
 		var params:Array<Any> = new Array<Any>();
 		
 		for (paramSlot in paramSlots)
 		{
 			var data:Datum = GetSlotData(paramSlot);
-			params.push(data.GetValue());
+			
+			if(data != null)
+			{
+				params.push(data.GetValue());
+			}
+			else
+			{
+				data = methodInfo.GetDefaultData(paramSlot);
+				
+				if (data != null)
+				{
+					params.push(data.GetValue());
+				}
+				else
+				{
+					params.push(null);
+				}
+			}
 		}
 		
 		var result:Any = ReflectHelper.GetInstance().CallSingleMethod(methodInfo.GetClassName(), methodInfo.GetMethodName(), params);
 
 		if (resultSlotID != Slot.InvalidSlot && result != null)
-		{
+			{
 			var resultDatum:Datum = this.GetSlotData(resultSlotID);
 			resultDatum.SetValue(result);
 			this.SetSlotData(resultSlotID, resultDatum);
-			
-			
+
 			// 获取连线参数传递
 			var allEndPoints:Array<EndPoint> = this.graph.GetAllEndPoints(this.GetNodeID(), resultSlotID);
-			
+		
 			if (allEndPoints != null)
 			{
 				for (nextParamPoint in allEndPoints)
 				{
 					var nextNode:Node = this.graph.GetNode(nextParamPoint.GetNodeID());
-					
+			
 					if (nextNode != null)
 						nextNode.SetSlotData(nextParamPoint.GetSlotID(), resultDatum);
 				}
 			}
-			
+
 		}
 
-		SignalOutput(outSlotId);
+		SignalOutput( outSlotId);
 	}
 }

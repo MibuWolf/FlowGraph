@@ -19,6 +19,7 @@ enum NodeType
 	METHOD;			// 功能方法
 	DATA;			// 数据
 	TRIGGER;		// 触发
+	GRAPHNODE;		// 流图节点
 }
 
 class Node
@@ -45,6 +46,15 @@ class Node
 	// 所属流图
 	private var graph(default, null):Graph;
 	
+	// 执行完成回调
+	private var outPutCallBack:Void->Void;
+	
+	// 当前节点是否被激活
+	private var bActivate:Bool;
+	// 被断后等待执行的流图输入节点
+	private var bWaitExcute:Bool = false;
+	private var waitData:Any = null;		
+	
 	public function new(owner:Graph) 
 	{
 		graph = owner;
@@ -52,6 +62,70 @@ class Node
 	
 		slots = new Map<String, Slot>();
 		datumMap = new Map<String, Datum>();
+		
+		bActivate = true;
+		bWaitExcute = false;
+		waitData = null;
+	}
+	
+	// 激活/暂停
+	public function Activate(bEnable:Bool):Void
+	{
+		bActivate = bEnable;
+		
+		if (bActivate)
+		{
+			OnActivate();
+		}
+	}
+	
+	// 被激活
+	private function OnActivate():Void
+	{
+		if (bWaitExcute)
+		{
+			SignalInput(waitData);
+		}
+		
+		bWaitExcute = false;
+		waitData = null;
+	}
+	
+	// 检查当前激活状态
+	private function CheckDeActivate(data:Any):Bool
+	{
+		if (!bActivate)
+		{
+			if (!bWaitExcute)
+			{
+				this.bWaitExcute = true;
+				var slotId:String = data;
+				this.waitData = slotId;	
+			}
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public function GetAllDatumMap():Map<String, Datum>
+	{
+		return datumMap;
+	}
+	
+	public function GetAllSlotMap():Map<String, Slot>
+	{
+		return slots;
+	}
+	
+	public function GetName():String
+	{
+		return name;
+	}
+	
+	public function GetGroupName():String
+	{
+		return groupName;
 	}
 	
 	public function Initialize(_nodeId:Int, _type:NodeType, _name:String = "", _groupName:String = ""):Void
@@ -125,7 +199,7 @@ class Node
 		if(data == null)
 			return DatumType.INVALID;
 			
-		return data.GetType();
+		return data.GetDatumType();
 	}
 
 	
@@ -175,6 +249,24 @@ class Node
 			graph.Execute();	
 		}	
 		
+		if (outPutCallBack != null)
+		{
+			outPutCallBack();
+		}
+		
+	}
+	
+	
+	// 添加执行完成回调
+	public function AddOutPutCallBack(callbback:Void->Void):Void
+	{
+		outPutCallBack = callbback;
 	}
 
+	
+	// 清理
+	public function Release()
+	{
+		
+	}
 }

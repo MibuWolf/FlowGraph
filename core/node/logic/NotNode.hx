@@ -16,8 +16,8 @@ class NotNode extends LogicBaseNode
 		super(owner);
 		
 		slotCondition = "Condition";
-		
-		AddDatumSlot(Slot.INITIALIZE_SLOT(slotCondition, SlotType.DataIn),Datum.INITIALIZE_BOOL());
+		name = "Not";
+		AddDatumSlot(Slot.INITIALIZE_SLOT(slotCondition, SlotType.DataIn),Datum.INITIALIZE_BOOL(name));
 	}
 	
 	
