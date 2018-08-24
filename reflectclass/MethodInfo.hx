@@ -64,6 +64,21 @@ class MethodInfo
 	}
 	
 	
+	// 获取参数类型
+	public function GetParamType(name:String):DatumType
+	{
+		for (param in params)
+		{
+			if (param != null && param.GetName() == name)
+			{
+				return param.GetDatumType();
+			}
+		}
+		
+		return DatumType.INVALID;
+	}
+	
+	
 	// 设置函数返回值
 	public function SetResult(resultType:Datum = null):Void
 	{
@@ -83,6 +98,31 @@ class MethodInfo
 		return result;
 	}
 	
+	public function SetDefaultEntityID(entityID:Int):Void
+	{
+		for (param in params)
+		{
+			if (param.GetDatumType() == DatumType.USERID) 
+			{
+				param.SetValue(ReflectHelper.GetInstance().CreateLogicData("userid",entityID));
+			}
+		}
+	}
+	
+	
+	// 根据名称获取默认数据
+	public function GetDefaultData(name:String):Datum
+	{
+		for (param in params)
+		{
+			if (param.GetName() == name) 
+			{
+				return param;
+			}
+		}
+		
+		return null;
+	}
 	
 	// 克隆数据
 	public function Clone():MethodInfo

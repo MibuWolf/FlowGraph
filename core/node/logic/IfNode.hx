@@ -14,10 +14,10 @@ class IfNode extends LogicBaseNode
 	public function new(owner:Graph) 
 	{
 		super(owner);
-		
+		name = "Branch";
 		slotCondition = "Condition";
 		
-		AddDatumSlot(Slot.INITIALIZE_SLOT(slotCondition, SlotType.DataIn),Datum.INITIALIZE_BOOL());
+		AddDatumSlot(Slot.INITIALIZE_SLOT(slotCondition, SlotType.DataIn),Datum.INITIALIZE_BOOL("Branch"));
 	}
 	
 	
@@ -25,7 +25,6 @@ class IfNode extends LogicBaseNode
 	override public function Evaluate():Bool
 	{
 		var data:Datum = GetSlotData(slotCondition);
-		
 		if (data == null)
 			return false;
 		

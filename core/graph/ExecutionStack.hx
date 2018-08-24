@@ -1,4 +1,5 @@
 package core.graph;
+import List;
 
 /**
  * ...
@@ -42,6 +43,12 @@ class ExecutionStack
 	public function GetCount():Int
 	{
 		return stack.length;
+	}
+	
+	// 清理所有堆栈数据
+	public function Release():Void
+	{
+		stack.clear();
 	}
 	
 }

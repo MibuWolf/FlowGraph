@@ -1,6 +1,6 @@
 package core.datum;
 import haxe.io.Bytes;
-
+import reflectclass.ReflectHelper;
 
 /**
  * ...
@@ -16,6 +16,8 @@ enum DatumType
 	INT;
 	FLOAT;
 	STRING;
+	USERID;
+	VECTOR3;
 }
 
 // 插槽数据
@@ -61,7 +63,7 @@ enum DatumType
 	
 	
 	// 获取类型 
-	public function GetType():DatumType
+	public function GetDatumType():DatumType
 	{
 		return type;
 	}
@@ -95,7 +97,35 @@ enum DatumType
 	// 设置数据
 	public function SetValue(valueAny:Any):Void
 	{
-			this.value = valueAny;
+		if (type == DatumType.INT)
+		{
+			var iValue:Int = valueAny;
+			this.value = iValue;
+			return;
+		}
+		
+		if (type == DatumType.FLOAT)
+		{
+			var fValue:Float = valueAny;
+			this.value = fValue;
+			return;
+		}
+		
+		if (type == DatumType.STRING)
+		{
+			var sValue:String = valueAny;
+			this.value = sValue;
+			return;
+		}
+		
+		if (type == DatumType.BOOL)
+		{
+			var bValue:Bool = valueAny;
+			this.value = bValue;
+			return;
+		}
+		
+		this.value = valueAny;
 	}
 	
 	
@@ -135,10 +165,34 @@ enum DatumType
 		return data;
 	}
 	
+	public static function INITIALIZE_USERID(vName:String = "", defaultValue:Int = 0)
+	{
+
+		var data:Datum = new Datum();
+		data.Initialize(DatumType.USERID, ReflectHelper.GetInstance().CreateLogicData("userid", defaultValue), vName);
+        
+		return data;
+	}
+	
+	public static function INITIALIZE_VECTOR3(vName:String = "", defaultValue:Any = null)
+	{
+		if (defaultValue == null) 
+		{
+			defaultValue = ReflectHelper.GetInstance().CreateLogicData("vector3",0,0,0);
+		}
+		var data:Datum = new Datum();
+		data.Initialize(DatumType.VECTOR3, defaultValue,vName);
+        
+		return data;
+	}
+	
 	
 	public static function INITIALIZE_UNDEFAULT(vType:DatumType, defaultName:String = "Value")
 	{
-
+		if (vType == DatumType.INVALID) 
+		{
+			return null;
+		}
 		var data:Datum = new Datum();
 		data.Initialize(vType, null, defaultName);
         

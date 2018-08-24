@@ -7,9 +7,10 @@ package;
  */
  import core.node.Node;
  import core.node.event.GraphStartNode;
+ import core.node.graphnode.GraphNode;
  import core.node.logic.IfNode;
  import core.node.reflect.MethodNode;
- import core.node.reflect.TriggerNode;
+ import core.node.reflect.ReflectTriggerNode;
  import core.serialization.laybox.LayBoxGraphData;
  import core.serialization.laybox.LayBoxNodeData;
  import core.slot.Slot;
@@ -20,26 +21,58 @@ package;
  import test.Student;
  import test.StudentMgr;
  import test.TestOutPut;
+ import test.MathUtils;
  import core.graph.Graph;
  import core.slot.Slot.SlotType;
- import core.graphmanager.GraphManager;
+ import core.manager.GraphManager;
 class Entry 
 {
+	
 	public static function main() :Void
 	{
 		// 测试Graph
 		
 		StudentMgr.GetInstance().ReflectToGraph();
 		TestOutPut.GetInstance().ReflectToGraph();
-		/**
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
+		MathUtils.GetInstance().ReflectToGraph();
+		
+		var subgraph:Graph = new Graph(2);
+		GraphManager.GetInstance().AddByGraph(subgraph);
+		
+		var add1:MethodNode = new MethodNode(subgraph);
+		add1.Initialize(1, NodeType.METHOD, "Add", "MathUtils");
+		add1.Initialization(ReflectHelper.GetInstance().GetClassInfo("MathUtils").GetMethod("Add"));
+		subgraph.AddNode(add1);
+		
+		var double:MethodNode = new MethodNode(subgraph);
+		double.Initialize(2, NodeType.METHOD, "Double", "MathUtils");
+		double.Initialization(ReflectHelper.GetInstance().GetClassInfo("MathUtils").GetMethod("Double"));
+		subgraph.AddNode(double);
+		
+		
+		var dadd:MethodNode = new MethodNode(subgraph);
+		dadd.Initialize(3, NodeType.METHOD, "DAdd", "MathUtils");
+		dadd.Initialization(ReflectHelper.GetInstance().GetClassInfo("MathUtils").GetMethod("DAdd"));
+		subgraph.AddNode(dadd);
+		
+		var output:MethodNode = new MethodNode(subgraph);
+		output.Initialization(ReflectHelper.GetInstance().GetClassInfo("TestOutPut").GetMethod("Output"));
+		output.Initialize(4, NodeType.METHOD, "graph", "TestOutPut");
+		subgraph.AddNode(output);
+		
+		
+		subgraph.AddConnection(1, "Out", 2, "In");
+		subgraph.AddConnection(1, "Value", 2, "vv");
+		subgraph.AddConnection(2, "Out", 3, "In");
+		subgraph.AddConnection(2, "Value", 3, "vv");
+		//subgraph.AddConnection(3, "Out", 4, "In");
+		//subgraph.AddConnection(3, "Value", 4, "iValue");
+		
+		subgraph.SetStartNodeID(1);
+		subgraph.SetEndNodeID(3);
+		
 		var graph:Graph = new Graph(1);
-		GraphManager.GetInstance().AddGraph(graph);
+		GraphManager.GetInstance().AddByGraph(graph);
 		var add1:MethodNode = new MethodNode(graph);
 		add1.Initialize(1, NodeType.METHOD, "AddStudent", "StudentMgr");
 		add1.Initialization(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetMethod("AddStudent"));
@@ -74,7 +107,27 @@ class Entry
 		output.Initialize(5, NodeType.METHOD, "Output", "TestOutPut");
 		graph.AddNode(output);
 		
-		var triggerNode:TriggerNode = new TriggerNode(graph);
+		var output1:MethodNode = new MethodNode(graph);
+		output1.Initialization(ReflectHelper.GetInstance().GetClassInfo("TestOutPut").GetMethod("Output"));
+		output1.Initialize(9, NodeType.METHOD, "Output", "TestOutPut");
+		graph.AddNode(output1);
+		
+		var subNode:GraphNode = new GraphNode(graph);
+		subNode.SetGraph(subgraph);
+		subNode.Initialize(10, NodeType.METHOD, "GraphNode", "Graph");
+		graph.AddNode(subNode);
+		
+		var add11:MethodNode = new MethodNode(graph);
+		add11.Initialize(11, NodeType.METHOD, "GetStudent3Age", "StudentMgr");
+		add11.Initialization(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetMethod("GetStudent3Age"));
+		graph.AddNode(add11);
+		
+		var add12:MethodNode = new MethodNode(graph);
+		add12.Initialize(12, NodeType.METHOD, "LogInt", "TestOutPut");
+		add12.Initialization(ReflectHelper.GetInstance().GetClassInfo("TestOutPut").GetMethod("LogInt"));
+		graph.AddNode(add12);
+		
+		var triggerNode:ReflectTriggerNode = new ReflectTriggerNode(graph);
 		triggerNode.Initialize(6, NodeType.METHOD, "OnTrigger", "StudentMgr");
 		triggerNode.Initialization(ReflectHelper.GetInstance().GetClassInfo("StudentMgr").GetCallBack("OnTrigger"));
 		graph.AddNode(triggerNode);
@@ -86,17 +139,26 @@ class Entry
 		
 		graph.AddConnection(0, "Out", 1, "In");
 		graph.AddConnection(1, "Out", 2, "In");
-		graph.AddConnection(7, "Result", 1, "age");
-		graph.AddConnection(8, "Result", 2, "age");
-		graph.AddConnection(1, "Result", 3, "ida");
-		graph.AddConnection(2, "Result", 3, "idb");
+		graph.AddConnection(7, "Value", 1, "age");
+		graph.AddConnection(8, "Value", 2, "age");
+		graph.AddConnection(1, "Value", 3, "ida");
+		graph.AddConnection(2, "Value", 3, "idb");
 		graph.AddConnection(2, "Out", 3, "In");
 		graph.AddConnection(3, "Out", 4, "In");
-		graph.AddConnection(3, "Result", 4, "Condition");
-		graph.AddConnection(4, "False", 5, "In");
+		graph.AddConnection(3, "Value", 4, "Condition");
+		graph.AddConnection(3, "Value", 5, "bValue");
+		//graph.AddConnection(4, "False", 5, "In");
+		graph.AddConnection(3, "Value", 9, "bValue");
+		graph.AddConnection(4, "True", 9, "In");
+		graph.AddConnection(9, "Out", 8, "In");
+		graph.AddConnection(9, "Out", 11, "In");
+		graph.AddConnection(11, "Out", 10, "In");
+		graph.AddConnection(11, "Value", 10, "vv");
+		graph.AddConnection(10, "Out", 12, "In");
+		graph.AddConnection(10, "Value", 12, "iValue");
 		graph.AddConnection(6,"Out",5,"In");
 
-		star.OnTrigger();
+		star.OnTrigger(null);
 		
 		/*StudentMgr.GetInstance().OnTrigger(1);
 		
@@ -113,7 +175,13 @@ class Entry
 		
 		
 		
-		**/
+		/**
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
 	
 		var testGraphData = { name:"testName", "0":{name:"GetTest",category:"StudentMgr",next:{Out:[1]} },"1":{name:"Log",category:"TestOutPut",input:{Value:{node_id:0,pin:"Value"}} }
 		};
@@ -281,6 +349,8 @@ class Entry
 
 		if(aaa)
 			trace(aaa);
+			
+		*/
 
 	}
 	

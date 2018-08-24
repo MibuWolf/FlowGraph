@@ -1,5 +1,4 @@
 package core.slot;
-import haxe.io.Bytes;
 
 
 /**
@@ -53,6 +52,12 @@ class Slot
 	public function IsData():Bool
 	{
 		return slotType == SlotType.DataIn || slotType == SlotType.DataOut;
+	}
+	
+	// 判定插槽类型
+	public function IsSlotType(type:SlotType):Bool
+	{
+		return slotType == type;
 	}
 	
 	// 是否是In数据

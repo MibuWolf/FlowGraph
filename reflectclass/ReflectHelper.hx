@@ -1,5 +1,7 @@
 package reflectclass;
-import core.graphmanager.GraphManager;
+import core.manager.GraphManager;
+
+
 /**
  * ...
  * @author MibuWolf
@@ -10,14 +12,18 @@ class ReflectHelper
 	private static var instance:ReflectHelper;
 	
 	private var classSingles:Map<String,Any>;
+	private var logicDatas:Map<String,String>;
 	private var allClassInfos:Map<String,ClassInfo>;
 	
-	public var Call:Dynamic;
+	private var LogicClassData:Any;
+	
+	public var CreateLogicData:Dynamic;
 	
 	public function new() 
 	{
 		classSingles = new Map<String, Any>();
 		allClassInfos = new Map<String, ClassInfo>();
+		logicDatas = new Map<String, String>();
 	}
 	
 	static public function GetInstance():ReflectHelper
@@ -25,8 +31,8 @@ class ReflectHelper
 		if (instance == null)
 		{
 			instance = new ReflectHelper();
-		
-			instance.Call = Reflect.makeVarArgs(instance.OnTrigger);
+			
+			instance.CreateLogicData = Reflect.makeVarArgs(instance.GetLogicData);
 		}
 			
 		return instance;
@@ -60,11 +66,46 @@ class ReflectHelper
 		return null;
 	}
 	
+	public function SetLogicClass(classType:Any):Void
+	{
+		LogicClassData = classType;
+	}
+	
 	
 	// 设置单例类对象
 	public function InitializationSingleClass(name:String, single:Any):Void
 	{
 		classSingles.set(name, single);
+	}
+	
+	
+	// 设置生产逻辑数据类型
+	public function ReflectLogicData(name:String, single:String):Void
+	{
+		logicDatas.set(name, single);
+	}
+	
+	
+	// 获取逻辑数据
+	public function GetLogicData(data:Array<Dynamic>):Any
+	{
+		var name:String = data[0];
+		if (!logicDatas.exists(name))
+			return null;
+			
+		var logicDataSingle:String = logicDatas.get(name);
+		
+		if (logicDataSingle == null)
+		{
+			return null;
+		}
+		
+		data.remove(name);
+		if(data == null)
+			return Reflect.callMethod(LogicClassData, Reflect.field(LogicClassData, logicDataSingle), data);
+		else
+			return Reflect.callMethod(LogicClassData, Reflect.field(LogicClassData, logicDataSingle), data);
+			
 	}
 	
 	
@@ -86,37 +127,9 @@ class ReflectHelper
 		return Reflect.callMethod(classSingle, Reflect.field(classSingle, methodName), params);
 	}
 	
-	
-	
-	// 事件调用
-	private function OnTrigger(params:Array<Dynamic>):Void
+	// 获取所有注册的类信息
+	public function GetAllClassInfo():Map<String,ClassInfo>
 	{
-		if (params == null || params.length < 2)
-			return;
-		
-		var className:String = params[0];
-		var eventName:String = params[1];
-		
-		var classInfo:ClassInfo = GetClassInfo(className);
-		
-		if (classInfo == null)
-			return;
-		
-		var triggerInfo:TriggerInfo = classInfo.GetCallBack(eventName);
-		
-		if (triggerInfo == null)
-			return;
-		
-		var index:Int = 2;
-		var count:Int = params.length;
-		
-		while(index < count)
-		{
-			triggerInfo.SetParamValue(index - 2, params[index]);
-			index ++;
-		}
-		
-		GraphManager.GetInstance().OnTrigger(className, eventName, triggerInfo);
+		return this.allClassInfos;
 	}
-	
 }

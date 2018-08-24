@@ -71,42 +71,59 @@ class MethodNode extends ExecuteNode
 	}
 	
 	
-	
 	// 进入该节点进行逻辑评价
 	override public function SignalInput(slotId:String):Void
 	{
-
-		if (methodInfo == null)
+		if (methodInfo == null || CheckDeActivate(slotId))
 			return;
-		
+			
 		var params:Array<Any> = new Array<Any>();
 		
-
-		for (paramSlotItem in paramSlots)
+		for (paramSlot in paramSlots)
 		{
-			var data:Datum = GetSlotData(paramSlotItem);
-			if (data != null) 
+			var data:Datum = GetSlotData(paramSlot);
+			
+			if(data != null)
 			{
-				data = GetSlotData(paramSlotItem);
 				params.push(data.GetValue());
 			}
-	
 			else
 			{
-				params.push(null);
+				data = methodInfo.GetDefaultData(paramSlot);
+				
+				if (data != null)
+				{
+					params.push(data.GetValue());
+				}
+				else
+				{
+					params.push(null);
+				}
 			}
 		}
-
-		var result:Any = ReflectHelper.GetInstance().CallSingleMethod(methodInfo.GetClassName(), methodInfo.GetMethodName(), params);
 		
-		if (resultSlotID != Slot.InvalidSlot && result != null)
-		{
-			var resultDefalut:Datum = methodInfo.GetResult();
-			var resultDatum:Datum = resultDefalut.Clone();
-			
-			resultDatum.SetValue(result);
+		var result:Any = ReflectHelper.GetInstance().CallSingleMethod(methodInfo.GetClassName(), methodInfo.GetMethodName(), params);
 
-			graph.SetNodeResultData(nodeId, resultSlotID, resultDatum);	
+		if (resultSlotID != Slot.InvalidSlot && result != null)
+			{
+			var resultDatum:Datum = this.GetSlotData(resultSlotID);
+			resultDatum.SetValue(result);
+			this.SetSlotData(resultSlotID, resultDatum);
+
+			// 获取连线参数传递
+			var allEndPoints:Array<EndPoint> = this.graph.GetAllEndPoints(this.GetNodeID(), resultSlotID);
+		
+			if (allEndPoints != null)
+			{
+				for (nextParamPoint in allEndPoints)
+				{
+					var nextNode:Node = this.graph.GetNode(nextParamPoint.GetNodeID());
+			
+					if (nextNode != null)
+						nextNode.SetSlotData(nextParamPoint.GetSlotID(), resultDatum);
+				}
+			}
+
 		}
 
 		SignalOutput( outSlotId);

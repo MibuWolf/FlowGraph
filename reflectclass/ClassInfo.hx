@@ -33,6 +33,16 @@ class ClassInfo
 		return className;
 	}
 	
+	public function GetAllMethods():Map<String, MethodInfo>
+	{
+		return methods;
+	}
+	
+	public function GetAllTriggers():Map<String, TriggerInfo>
+	{
+		return callbacks;
+	}
+	
 	
 	// 注册方法
 	public function RegisterMethod(methodName:String, params:Array<Datum>, result:Datum = null):Void
@@ -102,12 +112,12 @@ class ClassInfo
 	
 	
 	// 添加回调函数
-	public function AddCallBack(methodName:String, methodInfo:TriggerInfo):Bool
+	public function AddCallBack(methodName:String, triggerInfo:TriggerInfo):Bool
 	{
-		if (methodInfo == null || GetCallBack(methodName) != null)
+		if (triggerInfo == null || GetCallBack(methodName) != null)
 			return false;
 			
-		callbacks.set(methodName, methodInfo);
+		callbacks.set(methodName, triggerInfo);
 		
 		return true;
 	}

@@ -1,8 +1,6 @@
 package core.graph;
 import core.node.Node;
-import core.slot.Slot;
-import core.datum.Datum;
-
+import core.manager.GraphTriggerManager;
 /**
  * 流图类
  * @author confiner
@@ -15,15 +13,21 @@ class Graph
 	private var connection:Array<Connection>;		// 所有节点关系
 	private var executStack:ExecutionStack;
 	
-	private var nodeAllResultDataDict:Map<String, Datum>;
+	private var startID:Int = -1;			// 开始节点ID
+	private var endID:Int = -1;				// 流图节点结束ID
 	
-	public function new(graphId:Int = -1) 
+	private var userId:Int;
+	
+	private var bActivate:Bool = true;			// 流图当前是否激活
+	
+	public function new(graphId:Int = -1, entityId:Int = -1) 
 	{
 		this.graphId = graphId;
 		this.nodes = new Map<Int, Node>();
 		this.connection = new Array<Connection>();
 		this.executStack = new ExecutionStack();
-		nodeAllResultDataDict = new Map<String, Datum>();
+		this.userId = entityId;
+		this.bActivate = true;
 	}
 	
 	
@@ -37,21 +41,28 @@ class Graph
 	// 开始流图
 	public function Start():Void
 	{
-		Clear();
-		
-		Execute();
+		Activate(true);
+		GraphTriggerManager.GetInstance().OnTrigger(["Graph", "GraphStartNode", graphId]);
 	}
 	
 	// 停止流图
 	public function Stop():Void
 	{
-		Clear();
+		Activate(false);
+		executStack.Release();
 	}
 	
-	// 清理流图
-	private function Clear():Void
+	
+	// 激活/暂停
+	public function Activate(bEnable:Bool):Void
 	{
+		bActivate = bEnable;
 		
+		for (node in this.nodes)
+		{
+			if (node != null)
+				node.Activate(bEnable);
+		}
 	}
 	
 	
@@ -81,6 +92,11 @@ class Graph
 		}
 	}
 	
+	public function GetOwnerID():Int
+	{
+		return this.userId;
+	}
+	
 	// 添加节点
 	public function AddNode(node:Node):Void
 	{
@@ -96,6 +112,33 @@ class Graph
 			return this.nodes.get(nodeID);
 			
 		return null;
+	}
+	
+	// 设置开始节点ID
+	public function SetStartNodeID(id:Int):Void
+	{
+		startID = id;
+	}
+	
+	
+	// 获取开始节点ID
+	public function GetStartNodeID():Int
+	{
+		return startID;
+	}
+	
+	
+	// 设置结束节点ID
+	public function SetEndNodeID(id:Int):Void
+	{
+		endID = id;
+	}
+	
+	
+	// 获取开始节点ID
+	public function GetEndNodeID():Int
+	{
+		return endID;
 	}
 	
 	// 移除节点
@@ -114,9 +157,8 @@ class Graph
 
 
 		var con:Connection = new Connection(sNID, sSID, tNID, tSID);
-	
-		this.connection.push(con);
 		
+		this.connection.push(con);
 		return true;
 	}
 	
@@ -182,33 +224,11 @@ class Graph
 		return allEndPoints;
 	}
 	
-	public function GetNodeSlotData(sNID:Int, sSID:String):Datum
+	
+	// 清理
+	public function Release()
 	{
-		var endPoint:EndPoint = GetInTransEndPoint(sNID, sSID);
-		if (endPoint == null) 
-		{
-			return null;
-		}
-		var key:String = endPoint.ToString();
-		if (nodeAllResultDataDict.exists(key)) 
-		{
-			return nodeAllResultDataDict.get(key);
-		}
-		return null;
+		
 	}
 	
-	
-	public function SetNodeResultData(sNID:Int, sSID:String, data:Datum):Void
-	{
-		var endPoint:EndPoint = new EndPoint(sNID, sSID);
-		var key:String = endPoint.ToString();
-		if (!nodeAllResultDataDict.exists(key)) 
-		{
-			nodeAllResultDataDict.set(key, data);
-		}
-		/*for (item in nodeAllResultDataDict.keys()) 
-		{
-			trace(item, nodeAllResultDataDict[item].GetValue());
-		}*/
-	}
 }

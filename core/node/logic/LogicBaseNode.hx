@@ -52,7 +52,6 @@ class LogicBaseNode extends ExecuteNode
 		var result:Bool = Evaluate();
 		
 		EvaluateResult();
-		
 		SignalOutput(outSlotId);
 		
 		SignalOutput(result ? slotTrue : slotFalse);
