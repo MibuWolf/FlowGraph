@@ -15,6 +15,10 @@ class ExecutionStack
 		stack = new List<EndPoint>();
 	}
 	
+	public function Elements():List<EndPoint>
+	{
+		return this.stack;
+	}
 	
 	// 添加执行堆栈
 	public function Add(endPoint:EndPoint):Void

@@ -15,7 +15,7 @@ class IfNode extends LogicBaseNode
 	{
 		super(owner);
 		name = "Branch";
-		slotCondition = "Condition";
+		slotCondition = "Branch";
 		
 		AddDatumSlot(Slot.INITIALIZE_SLOT(slotCondition, SlotType.DataIn),Datum.INITIALIZE_BOOL("Branch"));
 	}

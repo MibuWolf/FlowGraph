@@ -3,6 +3,9 @@ import core.datum.Datum;
 import core.graph.Graph;
 import core.slot.Slot;
 import core.graph.EndPoint;
+import core.debug.DebugRuntimeGraphInfo;
+import core.manager.GraphManager;
+import reflectclass.ReflectHelper;
 
 /**
  * 节点基类
@@ -14,13 +17,37 @@ import core.graph.EndPoint;
 enum NodeType 
 {
 	INVALID;		// 无效的
-	NORMAL;			// 普通
-	LOGIC;
-	METHOD;			// 功能方法
-	DATA;			// 数据
-	TRIGGER;		// 触发
-	GRAPHNODE;		// 流图节点
+	data;			// 数据节点
+	ctrl;			// 方法节点
+	event;			// 触发节点
+	variable;			// 数据节点
+	custom;		// 自定义节点
+	graph;		// 流图节点
+	logic;		// 逻辑节点
+	start;	// 流图事件节点
+	end;
 }
+
+enum NodeSubType
+{
+	INVALID;		// 无效的
+	Bridge;
+	Switch;
+}
+
+enum NodeState
+{
+	INVALID;		// 无效的
+	Bridge;
+	Switch;
+}
+
+/*Data = "data",	// 数据类型没有In插槽Out插槽
+		Ctrl = "ctrl",	// 功能类型具有In和Out插槽
+		Event = "event",	// 事件类型无In插槽
+		Variable = "variable",	// 变量类型
+		Custom = "custom"	// 自定义节点类型*/
+
 
 class Node
 {
@@ -47,25 +74,29 @@ class Node
 	private var graph(default, null):Graph;
 	
 	// 执行完成回调
-	private var outPutCallBack:Void->Void;
+	private var outPutCallBack:String->Void;
+	
+	public var IsBreakpointing:Bool = false;
 	
 	// 当前节点是否被激活
 	private var bActivate:Bool;
 	// 被断后等待执行的流图输入节点
-	private var bWaitExcute:Bool = false;
-	private var waitData:Any = null;		
+	public var bWaitExcute:Bool = false;
+	private var waitData:Any = null;	
+	
+	public var logs:Array<String>;
 	
 	public function new(owner:Graph) 
 	{
 		graph = owner;
-		type = NodeType.NORMAL;
-	
+		type = NodeType.ctrl;
 		slots = new Map<String, Slot>();
 		datumMap = new Map<String, Datum>();
-		
+		IsBreakpointing = false;
 		bActivate = true;
 		bWaitExcute = false;
 		waitData = null;
+		logs = new Array<String>();
 	}
 	
 	// 激活/暂停
@@ -79,6 +110,11 @@ class Node
 		}
 	}
 	
+	public function GetNodeType():NodeType
+	{
+		return this.type;
+	}
+	
 	// 被激活
 	private function OnActivate():Void
 	{
@@ -89,6 +125,14 @@ class Node
 		
 		bWaitExcute = false;
 		waitData = null;
+	}
+	
+	public function ClearLogs():Void
+	{
+		while (logs.length > 0)
+		{
+			logs.pop();
+		}
 	}
 	
 	// 检查当前激活状态
@@ -147,8 +191,16 @@ class Node
 	// 添加插槽
 	public function AddSlot(slot:Slot):Void
 	{
-		if(slot != null)
+		if(slot != null && !slots.exists(slot.slotId))
 			slots.set(slot.slotId, slot);
+	}
+	
+	
+	// 移除插槽
+	public function RemoveSlot(slotId:String):Void
+	{
+		if (slots.exists(slotId))
+			slots.remove(slotId);
 	}
 
 	
@@ -209,6 +261,11 @@ class Node
 		
 	}
 	
+	public function AddLogs(msg:String):Void
+	{
+		logs.push(msg);
+	}
+	
 	
 	// 退出节点对应的插槽
 	public function SignalOutput(slotId:String):Void
@@ -251,14 +308,29 @@ class Node
 		
 		if (outPutCallBack != null)
 		{
-			outPutCallBack();
+			outPutCallBack(slotId);
 		}
 		
 	}
 	
+	public function GetSlotsBySlotType(type:SlotType):Array<Slot>
+	{
+		var outSlotArr:Array<Slot> = new Array<Slot>();
+		
+		for (slotitem in slots) 
+		{
+			if (slotitem.IsSlotType(type)) 
+			{
+				outSlotArr.push(slotitem);
+			}
+		}
+		
+		return outSlotArr;
+	}
+	
 	
 	// 添加执行完成回调
-	public function AddOutPutCallBack(callbback:Void->Void):Void
+	public function AddOutPutCallBack(callbback:String->Void):Void
 	{
 		outPutCallBack = callbback;
 	}
@@ -267,6 +339,28 @@ class Node
 	// 清理
 	public function Release()
 	{
+		for (slot in slots)
+		{
+			if (slot != null)
+				slot.Release();
+		}
 		
+		slots = null;
+		
+		for (datum in datumMap)
+		{
+			if (datum != null)
+				datum.Release();
+		}
+		
+		datumMap = null;
+		
+		outPutCallBack = null;
+		waitData = null;
+		graph = null;
+		type = NodeType.INVALID;
+		name = "";
+		groupName = "";
+		nodeId = -1;
 	}
 }

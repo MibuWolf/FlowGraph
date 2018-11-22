@@ -1,5 +1,8 @@
 package core.serialization.laybox;
+import core.node.ExecuteNode;
 import core.node.logic.LogicBaseNode;
+import core.node.varible.VariableGetNode;
+import core.node.varible.VariableSetNode;
 import reflectclass.MethodInfo;
 import haxe.Json;
 import core.node.logic.AndNode;
@@ -13,6 +16,9 @@ import reflectclass.ReflectHelper;
 import reflectclass.TriggerInfo;
 import core.slot.Slot;
 import reflectclass.ClassInfo;
+import core.node.Node.NodeType;
+import core.datum.DefaultVar;
+import core.serialization.laybox.LayBoxParamData;
 /**
  * 为laybox编辑器构造节点数据结构
  * @author MibuWolf
@@ -40,6 +46,8 @@ class LayBoxNodeData
 	// 下一个逻辑节点
 	public var next:Array<String>;
 	
+	public var before:Array<String>;
+	
 	public function new() 
 	{
 		
@@ -53,8 +61,8 @@ class LayBoxNodeData
 			return Json.stringify({});
 		
 		var nodeData:LayBoxNodeData = new LayBoxNodeData();
-		nodeData.type = "ctrl";
-		nodeData.nodeTips = info.GetClassName() + "." + info.GetMethodName();
+		nodeData.type = NodeType.ctrl.getName();
+		nodeData.nodeTips = info.GetTips();
 		nodeData.category = info.GetClassName();
 		nodeData.name = info.GetMethodName();
 		
@@ -93,14 +101,15 @@ class LayBoxNodeData
 	}
 	
 	// 成员方法序列化
-	public static function MethodInfoToNodeData(info:MethodInfo):LayBoxNodeData
+	public static function MethodInfoToNodeData(info:MethodInfo, type:String):LayBoxNodeData
 	{
 		if (info == null)
 			return null;
 		
 		var nodeData:LayBoxNodeData = new LayBoxNodeData();
-		nodeData.type = "ctrl";
-		nodeData.nodeTips = info.GetClassName() + "." + info.GetMethodName();
+		//nodeData.type = NodeType.ctrl.getName();
+		nodeData.type = type;
+		nodeData.nodeTips = info.GetTips();
 		nodeData.category = info.GetClassName();
 		nodeData.name = info.GetMethodName();
 		
@@ -134,6 +143,9 @@ class LayBoxNodeData
 		nodeData.next = new Array<String>();
 		
 		nodeData.next.push("Out");
+		
+		nodeData.before = new Array<String>();
+		nodeData.before.push("In");
 		
 		return nodeData;
 	}
@@ -188,8 +200,8 @@ class LayBoxNodeData
 			return Json.stringify({});
 			
 		var nodeData:LayBoxNodeData = new LayBoxNodeData();
-		nodeData.type = "event";
-		nodeData.nodeTips = info.GetClassName() + "." + info.GetMethodName();
+		nodeData.type = NodeType.event.getName();
+		nodeData.nodeTips = info.GetTips();
 		nodeData.category = info.GetClassName();
 		nodeData.name = info.GetMethodName();
 		
@@ -227,14 +239,15 @@ class LayBoxNodeData
 		return Json.stringify(nodeData);
 	}
 	
-	public static function TriggerInfoToNodeData(info:TriggerInfo):LayBoxNodeData
+	public static function TriggerInfoToNodeData(info:TriggerInfo, type:String):LayBoxNodeData
 	{
 		if (info == null)
 			return null;
 			
 		var nodeData:LayBoxNodeData = new LayBoxNodeData();
-		nodeData.type = "event";
-		nodeData.nodeTips = info.GetClassName() + "." + info.GetMethodName();
+		//nodeData.type = NodeType.event.getName();
+		nodeData.type = type;
+		nodeData.nodeTips = info.GetTips();
 		nodeData.category = info.GetClassName();
 		nodeData.name = info.GetMethodName();
 		
@@ -273,7 +286,6 @@ class LayBoxNodeData
 		
 		return nodeData;
 	}
-	
 	
 	// 触发器(事件)反序列化
 	public static function TriggerInfoFormJson(strJson:String):TriggerInfo
@@ -322,7 +334,7 @@ class LayBoxNodeData
 			return null;
 		
 		var nodeData:LayBoxNodeData = new LayBoxNodeData(); 
-		nodeData.type = node.GetGroupName();
+		nodeData.type = NodeType.logic.getName();
 		nodeData.nodeTips = node.GetGroupName()+"." + node.GetName();
 		nodeData.category = node.GetGroupName();
 		nodeData.name = node.GetName();
@@ -362,6 +374,53 @@ class LayBoxNodeData
 			}
 		}
 		
+		nodeData.before = new Array<String>();
+		nodeData.before.push("In");
+		
+		return nodeData;
+	}
+	
+	// 成员方法序列化
+	public static function VariableNodeToNodeData(node:ExecuteNode, isSet:Bool):LayBoxNodeData
+	{
+		if (node == null)
+			return null;
+		
+		var nodeData:LayBoxNodeData = new LayBoxNodeData(); 
+		nodeData.type = NodeType.variable.getName();
+		nodeData.nodeTips = node.GetGroupName()+"." + node.GetName();
+		nodeData.category = node.GetGroupName();
+		nodeData.name = node.GetName();
+		//var params:Map<String, Datum> = node.GetAllDatumMap(); 
+		
+		nodeData.next = new Array<String>();
+		nodeData.next.push("Out");
+		
+		nodeData.before = new Array<String>();
+		nodeData.before.push("In");
+		
+		
+				
+		if (isSet)
+		{
+			nodeData.input = new Array<Map<String,Map<String,Any>>>();
+			var inputData:Map<String,Map<String,Any>> = new Map<String, Map<String, Any>>();
+			var inputlock:Map<String,Any> = new Map<String, Any>();
+			inputlock.set("lock", "lock");
+			inputData.set("lock", inputlock);
+			if(inputData != null)
+				nodeData.input.push(inputData);
+		}
+		else{
+			nodeData.output = new Array<Map<String,Map<String,Any>>>();
+			var outputData:Map<String,Map<String,Any>> = new Map<String, Map<String, Any>>();
+			var outputlock:Map<String,Any> = new Map<String, Any>();
+			outputlock.set("lock", "lock");
+			outputData.set("lock", outputlock);
+			if(outputData != null)
+				nodeData.output.push(outputData);
+		}
+		
 		return nodeData;
 	}
 
@@ -369,13 +428,36 @@ class LayBoxNodeData
 	// 获取所有节点描述信息
 	public static function GetAllNodeJson():String
 	{
+		// 注册节点给流图编辑器
 		var allLayBoxNodeDatas = new Array<LayBoxNodeData>();
-
 		InitCommonNodes(allLayBoxNodeDatas);
-		
 		InitReflectNodes(allLayBoxNodeDatas);
+		var data:Map<String, Any> = new Map<String, Any>();
+		data.set("nodes", allLayBoxNodeDatas);
 		
-		return Json.stringify(allLayBoxNodeDatas);
+		// 注册默认变量给流图编辑器
+		var defaultVars:Array<DefaultVar> = new Array<DefaultVar>();
+		var dVar1:DefaultVar = new DefaultVar("attackId", LayBoxParamData.GetTypeName(DatumType.USERID), 0);
+		var dVar2:DefaultVar = new DefaultVar("beAttackId", LayBoxParamData.GetTypeName(DatumType.USERID), 0);
+		var dVar3:DefaultVar = new DefaultVar("attackMoveToPos", LayBoxParamData.GetTypeName(DatumType.VECTOR3), [0,0,0]);
+		var dVar4:DefaultVar = new DefaultVar("beAttackMoveToPos", LayBoxParamData.GetTypeName(DatumType.VECTOR3), [0,0,0]);
+		var dVar5:DefaultVar = new DefaultVar("conditionName", LayBoxParamData.GetTypeName(DatumType.STRING), "");
+		var dVar6:DefaultVar = new DefaultVar("skillIsOver", LayBoxParamData.GetTypeName(DatumType.BOOL), false);
+		var dVar7:DefaultVar = new DefaultVar("isCanMove", LayBoxParamData.GetTypeName(DatumType.BOOL), false);
+		var dVar8:DefaultVar = new DefaultVar("skillId", LayBoxParamData.GetTypeName(DatumType.INT), 0);
+		var dVar9:DefaultVar = new DefaultVar("graphId", LayBoxParamData.GetTypeName(DatumType.INT), 0);
+		defaultVars.push(dVar1);
+		defaultVars.push(dVar2);
+		defaultVars.push(dVar3);
+		defaultVars.push(dVar4);
+		defaultVars.push(dVar5);
+		defaultVars.push(dVar6);
+		defaultVars.push(dVar7);
+		defaultVars.push(dVar8);
+		defaultVars.push(dVar9);
+		data.set("vars", defaultVars);
+		
+		return Json.stringify(data);
 	}
 	
 	
@@ -392,8 +474,20 @@ class LayBoxNodeData
 		allLayBoxNodeDatas.push(LayBoxNodeData.LogicNodeToNodeData(new FloatCompareNode(null)));
 		allLayBoxNodeDatas.push(LayBoxNodeData.LogicNodeToNodeData(new StringCompareNode(null)));
 		
+		var varD:Datum = new Datum();
+		varD.Initialize(DatumType.STRING, "", "var1");
+		var getNode:VariableGetNode = new VariableGetNode(null);
+		var setNode:VariableSetNode = new VariableSetNode(null);
+		setNode.Initialization(varD);
+		getNode.Initialization(varD);
+		allLayBoxNodeDatas.push(LayBoxNodeData.VariableNodeToNodeData(getNode, false));
+		allLayBoxNodeDatas.push(LayBoxNodeData.VariableNodeToNodeData(setNode, true));
+		
 		var graphStart:TriggerInfo = new TriggerInfo("Graph", "GraphStartNode");
-		allLayBoxNodeDatas.push(TriggerInfoToNodeData(graphStart));
+		allLayBoxNodeDatas.push(TriggerInfoToNodeData(graphStart, NodeType.start.getName()));
+		
+		var endGraph:TriggerInfo = new TriggerInfo("Graph", "EndGraph");
+		allLayBoxNodeDatas.push(TriggerInfoToNodeData(endGraph, NodeType.end.getName()));
 	}
 	
 	
@@ -411,7 +505,7 @@ class LayBoxNodeData
 			{
 				for (methodItem in allMethods) 
 				{
-					var data:LayBoxNodeData = LayBoxNodeData.MethodInfoToNodeData(methodItem);
+					var data:LayBoxNodeData = LayBoxNodeData.MethodInfoToNodeData(methodItem, NodeType.ctrl.getName());
 					allLayBoxNodeDatas.push(data);
 				}
 			}
@@ -421,7 +515,7 @@ class LayBoxNodeData
 			{
 				for (triggerItem in allTriggers) 
 				{
-					var data:LayBoxNodeData = LayBoxNodeData.TriggerInfoToNodeData(triggerItem);
+					var data:LayBoxNodeData = LayBoxNodeData.TriggerInfoToNodeData(triggerItem, NodeType.event.getName());
 					allLayBoxNodeDatas.push(data);
 				}
 			}

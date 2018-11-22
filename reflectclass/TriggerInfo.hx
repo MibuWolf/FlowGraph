@@ -14,14 +14,29 @@ class TriggerInfo
 	// 输入参数类型及默认值
 	private var params:Array<Datum>;
 	
+	// 输入参数个数
+	private var inputCount:Int = 0;
+	
+	private var tips:String;
 	
 	public function new(cName:String, mName:String) 
 	{
 		className = cName;
 		methodName = mName;
+		inputCount = 0;
 		
 		params = new Array<Datum>();
 		
+	}
+	
+	public function GetTips():String
+	{
+		return tips;
+	}
+	
+	public function SetTips(tip:String):Void
+	{
+		this.tips = tip;
 	}
 	
 	
@@ -43,6 +58,13 @@ class TriggerInfo
 	{
 		if(param != null)
 			params.push(param);
+		
+		inputCount = 0;
+		for (param in params)
+		{
+			if (param.GetValue() != null)
+				inputCount ++;
+		}
 	}
 	
 	// 设置参数值
@@ -122,4 +144,26 @@ class TriggerInfo
 	}
 	
 	
+	
+	// 克隆数据
+	public function Clone():TriggerInfo
+	{
+		var info:TriggerInfo = new TriggerInfo(className, methodName);
+		
+		for (param in params)
+		{
+			info.AddParam(param.Clone());
+		}
+		
+		info.inputCount = inputCount;
+		
+		return info;
+	}
+	
+	
+	// 获取输入参数
+	public function GetInputParamCount():Int
+	{
+		return inputCount;
+	}
 }

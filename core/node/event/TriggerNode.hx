@@ -60,6 +60,15 @@ class TriggerNode extends Node
 	
 	public function OnTrigger(param:Array<Any>):Void
 	{
+		this.graph.AddRuntimeDebugToStack(this.GetNodeID());
+	}
+	
+	// 释放
+	override public function Release()
+	{
+		super.Release();
 		
+		paramInSlots = null;
+		paramOutSlots = null;
 	}
 }

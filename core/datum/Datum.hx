@@ -129,6 +129,14 @@ enum DatumType
 	}
 	
 	
+	// 释放
+	public function Release()
+	{
+		type = DatumType.INVALID;
+		name = "";
+		value = null;
+	}
+	
 	public static function INITIALIZE_BOOL(vName:String = "", defaultValue:Bool = false)
 	{
 
@@ -167,7 +175,6 @@ enum DatumType
 	
 	public static function INITIALIZE_USERID(vName:String = "", defaultValue:Int = 0)
 	{
-
 		var data:Datum = new Datum();
 		data.Initialize(DatumType.USERID, ReflectHelper.GetInstance().CreateLogicData("userid", defaultValue), vName);
         

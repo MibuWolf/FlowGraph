@@ -36,8 +36,20 @@ class TriggerCondition
 		
 		for (data in condition)
 		{
-			if (data.GetValue() != param[index++])
-				return;
+			if (data.GetDatumType() == DatumType.USERID) 
+			{
+				var did:Int = Std.parseInt(data.GetValue());
+				var pid:Int = Std.parseInt(param[index++]);
+				if (did!=pid) 
+				{
+					return;
+				}
+			}
+			else
+			{
+				if (data.GetValue() != param[index++])
+					return;
+			}
 		}
 		
 		OnTrigger(param);
@@ -61,6 +73,17 @@ class TriggerCondition
 		
 	}
 	
+	public function Clone():TriggerCondition
+	{
+		var cloneCondi:Array<Datum> = new Array<Datum>();
+		for (item in this.condition)
+		{
+			cloneCondi.push(item.Clone());
+		}
+		var data:TriggerCondition = new TriggerCondition(this.graphID, this.nodeID, cloneCondi);
+		
+		return data;
+	}
 	
 	// 清理
 	public function Release():Void

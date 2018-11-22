@@ -28,7 +28,7 @@ class MethodNode extends ExecuteNode
 	{
 		super(owner);
 		
-		type = NodeType.METHOD;
+		type = NodeType.ctrl;
 		paramSlots = new Array<String>();
 
 		resultSlotID = "Value";
@@ -76,6 +76,7 @@ class MethodNode extends ExecuteNode
 	{
 		if (methodInfo == null || CheckDeActivate(slotId))
 			return;
+		
 			
 		var params:Array<Any> = new Array<Any>();
 		
@@ -85,7 +86,16 @@ class MethodNode extends ExecuteNode
 			
 			if(data != null)
 			{
-				params.push(data.GetValue());
+				if (data.GetDatumType() == DatumType.USERID) 
+				{
+					var pid:Int = Std.parseInt(data.GetValue());
+					var eid:Dynamic = ReflectHelper.GetInstance().CreateLogicData("userid", pid);
+					params.push(eid);
+				}
+				else
+				{
+					params.push(data.GetValue());
+				}
 			}
 			else
 			{
@@ -128,4 +138,14 @@ class MethodNode extends ExecuteNode
 
 		SignalOutput( outSlotId);
 	}
+
+	
+	// 清理
+	override public function Release()
+	{
+		super.Release();
+		
+		paramSlots = null;
+	}
+	
 }

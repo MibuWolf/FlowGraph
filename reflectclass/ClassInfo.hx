@@ -45,13 +45,14 @@ class ClassInfo
 	
 	
 	// 注册方法
-	public function RegisterMethod(methodName:String, params:Array<Datum>, result:Datum = null):Void
+	public function RegisterMethod(methodName:String,tips:String, params:Array<Datum>, result:Datum = null):Void
 	{
 		var methodInfo:MethodInfo = GetMethod(methodName);
 		
 		if (methodInfo == null)
 		{
 			methodInfo = new MethodInfo(className, methodName);
+			methodInfo.SetTips(tips);
 			methods.set(methodName, methodInfo);
 		}
 		
@@ -69,13 +70,14 @@ class ClassInfo
 	
 	
 	// 注册回调函数
-	public function RegisterCallBack(callbackName:String, params:Array<Datum>):Void
+	public function RegisterCallBack(callbackName:String,tips:String, params:Array<Datum>):Void
 	{
 		var callBackInfo:TriggerInfo = GetCallBack(callbackName);
 		
 		if (callBackInfo == null)
 		{
 			callBackInfo = new TriggerInfo(className, callbackName);
+			callBackInfo.SetTips(tips);
 			callbacks.set(callbackName, callBackInfo);
 		}
 		

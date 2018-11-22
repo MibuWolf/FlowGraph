@@ -41,6 +41,16 @@ class GraphTriggerInfo
 	}
 	
 	
+	// 移除流图节点
+	public function RemoveTriggerNode(nodeID:Int):Void
+	{
+		if (!eventNodeList.exists(nodeID))
+			return;
+		
+		eventNodeList.remove(nodeID);
+	}
+	
+	
 	// 触发事件
 	public function OnTrigger(params:Array<Any>):Void
 	{
@@ -51,6 +61,16 @@ class GraphTriggerInfo
 		}
 	}
 	
+	public function Clone():GraphTriggerInfo
+	{
+		var data:GraphTriggerInfo = new GraphTriggerInfo(this.graphID);
+		for (key in this.eventNodeList.keys())
+		{
+			data.eventNodeList.set(key, this.eventNodeList.get(key).Clone());
+		}
+		
+		return data;
+	}
 	
 	// 清理
 	public function Release():Void

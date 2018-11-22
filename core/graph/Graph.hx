@@ -1,6 +1,13 @@
 package core.graph;
 import core.node.Node;
 import core.manager.GraphTriggerManager;
+import core.datum.Datum;
+import reflectclass.CustomNodeInfo;
+import core.debug.DebugRuntimeGraphInfo;
+import core.slot.Slot;
+import haxe.Json;
+import core.manager.DebugManager;
+import core.manager.GraphManager;
 /**
  * 流图类
  * @author confiner
@@ -20,6 +27,20 @@ class Graph
 	
 	private var bActivate:Bool = true;			// 流图当前是否激活
 	
+	private var graphVaribles:Map<String, Datum>;
+	
+	private var customNodeTempletes:Map<String, CustomNodeInfo>;
+	
+	private var graphName:String = "";
+	
+	private var isStop:Bool;
+	
+	// 当前流图的堆栈信息
+	private var debugStack:Array<DebugRuntimeGraphInfo>;
+	
+	// 流图是否正处在断点调试
+	private var isBreakpointRunning:Bool = false;
+	
 	public function new(graphId:Int = -1, entityId:Int = -1) 
 	{
 		this.graphId = graphId;
@@ -28,8 +49,27 @@ class Graph
 		this.executStack = new ExecutionStack();
 		this.userId = entityId;
 		this.bActivate = true;
+		graphVaribles = new Map<String, Datum>();
+		customNodeTempletes = new Map<String, CustomNodeInfo>();
+		debugStack = new Array<DebugRuntimeGraphInfo>();
+		this.isBreakpointRunning = false;
+		SetIsStop(true);
 	}
 	
+	public function DebugStack():Array<DebugRuntimeGraphInfo>
+	{
+		return this.debugStack;
+	}
+	
+	public function SetIsStop(value:Bool):Void
+	{
+		this.isStop = value;
+	}
+	
+	public function GetIsStop():Bool
+	{
+		return this.isStop;
+	}
 	
 	// 获取流图ID
 
@@ -38,18 +78,205 @@ class Graph
 		return graphId;
 	}
 	
+	public function SetGraphName(name:String):Void
+	{
+		this.graphName = name;
+	}
+	
+	public function GetGraphName():String
+	{
+		return this.graphName;
+	}
+	
 	// 开始流图
 	public function Start():Void
 	{
-		Activate(true);
+		if (executStack != null) 
+		{
+			executStack.Release();
+		}
+		SetIsStop(false);
 		GraphTriggerManager.GetInstance().OnTrigger(["Graph", "GraphStartNode", graphId]);
+	}
+	
+	// 开始流图
+	public function Quit():Void
+	{
+		//Activate(true);
+		GraphTriggerManager.GetInstance().OnTrigger(["Graph", "EndGraph", graphId]);
 	}
 	
 	// 停止流图
 	public function Stop():Void
 	{
 		Activate(false);
+		SetIsStop(true);
 		executStack.Release();
+		this.Release();
+	}
+	
+	// debug信息加入到当前流图的堆栈
+	public function AddDebugStack(debugInfo:DebugRuntimeGraphInfo, isMarge:Bool):Void
+	{
+		if (debugInfo == null) 
+		{
+			return;
+		}
+		var node2:Node = GetNode(debugInfo.GetCurrNode());
+		if (node2 != null && node2.GetNodeType() == NodeType.event) 
+		{
+			while (debugStack.length > 0)
+			{
+				debugStack.pop();
+			}
+		}
+		
+		if (debugStack.length >= 100) 
+		{
+			debugStack.shift();
+		}
+		debugStack.push(debugInfo);
+		
+		if (!isMarge) 
+		{
+			// 如果当前流图运行的节点被断点了，触发断点
+			if (DebugManager.GetInstance().isDebugMode && !DebugManager.GetInstance().IsNodeBreakpointing(debugInfo.GetGraphId(), debugInfo.GetCurrNode()) && DebugManager.GetInstance().isNodeBreakpoint(debugInfo.GetGraphName(), debugInfo.GetCurrNode())) 
+			{
+				this.isBreakpointRunning = true;
+				DebugManager.GetInstance().pauseGraph = debugInfo.GetGraphId();
+				DebugManager.GetInstance().pauseNode = debugInfo.GetCurrNode();
+				var node:Node = GetNode(debugInfo.GetCurrNode());
+				if (node!= null) 
+				{
+					node.IsBreakpointing = true;
+					
+					node.Activate(false);
+				}
+				
+				for (item in executStack.Elements()) 
+				{
+					var node:Node = GetNode(item.GetNodeID());
+					if (node != null)
+					{
+						node.Activate(false);
+					}
+				}
+				var result:Map<String, Array<DebugRuntimeGraphInfo>> = new Map<String, Array<DebugRuntimeGraphInfo>>();
+				result.set("stacks", debugStack);
+				var debugStr:String = Json.stringify(result);
+				DebugManager.GetInstance().TriggerBreakPoint(debugStr);
+			}
+		}
+	}
+	
+	// 继续断点运行
+	public function ContinueStack():Void
+	{
+		this.isBreakpointRunning = false;
+		
+		var node:Node = GetNode(DebugManager.GetInstance().pauseNode);
+		if (node!= null) 
+		{
+			node.Activate(true);
+			node.IsBreakpointing = false;
+		}
+				
+		for (item in executStack.Elements()) 
+		{
+			if (item.GetNodeID() == DebugManager.GetInstance().pauseNode) 
+			{
+				continue;
+			}
+			var node:Node = GetNode(item.GetNodeID());
+			if (node != null )
+			{
+				node.Activate(true);
+			}
+		}
+	}
+	
+	public function Nodes():Map<Int, Node>
+	{
+		return this.nodes;
+	}
+	
+	// 增加自定义节点模板
+	public function AddCustomNodeTemplete(name:String, templete:CustomNodeInfo):Void
+	{
+		if (!customNodeTempletes.exists(name)) 
+		{
+			customNodeTempletes.set(name, templete);
+		}
+		else{
+			customNodeTempletes.remove(name);
+			customNodeTempletes.set(name, templete);
+		}
+	}
+	
+	// 得到自定义节点模板
+	public function GetCustomNodeTemplete(name:String):CustomNodeInfo
+	{
+		if (customNodeTempletes.exists(name)) 
+		{
+			return customNodeTempletes.get(name);
+		}
+		return null;
+	}
+	
+	// 所有的变量
+	public function Variables():Map<String, Datum>
+	{
+		return this.graphVaribles;
+	}
+	
+	// 增加一个变量
+	public function AddVarible(varName:String, data:Datum)
+	{
+		if (!graphVaribles.exists(varName))
+		{
+			graphVaribles.set(varName, data);
+		}
+	}
+	
+	// 移除一个变量
+	public function RemoveVarible(varName:String)
+	{
+		if (!graphVaribles.exists(varName))
+		{
+			graphVaribles.remove(varName);
+		}
+	}
+	
+	// 通过名字得到变量
+	public function GetVariableData(varName:String):Datum
+	{
+		if (graphVaribles.exists(varName))
+		{
+			var d:Datum = graphVaribles.get(varName);
+			return d;
+		}
+		return null;
+	}
+	
+	// 得到变量里保存的值
+	public function GetVaribleValue(varName:String):Any
+	{
+		if (graphVaribles.exists(varName))
+		{
+			var d:Datum = graphVaribles.get(varName);
+			return d.GetValue();
+		}
+		return null;
+	}
+	
+	// 设置变量里的值
+	public function SetVaribleValue(varName:String, value:Any):Void
+	{
+		if (graphVaribles.exists(varName))
+		{
+			var d:Datum = graphVaribles.get(varName);
+			return d.SetValue(value);
+		}
 	}
 	
 	
@@ -69,6 +296,10 @@ class Graph
 	// 添加进入执行栈
 	public function AddToExecutionStack(endPoint:EndPoint):Void
 	{
+		if (this.isBreakpointRunning || this.GetIsStop()) 
+		{
+			return;
+		}
 		if(executStack != null && endPoint != null)
 			executStack.Add(endPoint);
 	}
@@ -78,6 +309,8 @@ class Graph
 	{
 		while (executStack.GetCount() > 0)
 		{
+			var count = executStack.GetCount();
+			trace(count);
 			//if (executStack.GetCount() > 1000)
 			//	// 死循环?
 				
@@ -86,10 +319,61 @@ class Graph
 			
 			if (node != null)
 			{
+				AddRuntimeDebugToStack(node.GetNodeID());
 				// 节点存在则进入节点相应的插槽
+				GraphManager.GetInstance().currGraph = this.graphId;
+				GraphManager.GetInstance().currNode = node.GetNodeID();
+				node.ClearLogs();
 				node.SignalInput(endpoint.GetSlotID());
+				node.ClearLogs();
 			}
 		}
+	}
+	
+	public function AddRuntimeDebugToStack(nodeid:Int):Void
+	{
+		#if !debug
+		var debugInfo:DebugRuntimeGraphInfo = new DebugRuntimeGraphInfo(this.GetGraphName(),this.GetGraphID(), nodeid);
+		for (nodeItem in this.Nodes().keys()) 
+		{
+			var gNode:Node = this.Nodes().get(nodeItem);
+			var debugNode:Map<String, Any> = new Map<String, Any>();
+			for (slotItemInfo in gNode.GetAllSlotMap().keys()) 
+			{
+				var slotItem:Slot = gNode.GetAllSlotMap().get(slotItemInfo);
+				if (slotItem.slotType == SlotType.DataIn) 
+				{
+					var nodeslot:Datum = gNode.GetAllDatumMap().get(slotItemInfo);
+					if (nodeslot.GetDatumType() == DatumType.USERID) 
+					{
+						var uid:Int = Std.parseInt(nodeslot.GetValue());
+						debugNode.set(slotItem.slotId, uid);
+					}
+					else
+					{
+						debugNode.set(slotItem.slotId, nodeslot.GetValue());
+					}
+				}
+			}
+			
+			var logs:Array<String> = new Array<String>();
+			for (log in gNode.logs) 
+			{
+				logs.push(log);
+			}
+			
+			debugNode.set("logs", logs);
+			
+			debugInfo.AddNodeInfo(gNode.GetNodeID(), debugNode);
+		}
+		
+		for (varitem in this.Variables().keys())
+		{
+			debugInfo.AddGraphVariable(varitem, this.Variables().get(varitem));
+		}
+		
+		this.AddDebugStack(debugInfo, false);
+		#end
 	}
 	
 	public function GetOwnerID():Int

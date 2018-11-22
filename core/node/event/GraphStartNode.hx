@@ -25,7 +25,16 @@ class GraphStartNode extends TriggerNode
 	
 	override public function OnTrigger(params:Array<Any>):Void
 	{
+		super.OnTrigger(params);
+		if (CheckDeActivate(params))
+			return;
+		
 		this.SignalOutput(outSlotID);
+	}
+	
+	override public function Release()
+	{
+		GraphTriggerManager.GetInstance().UnRegisterTrigger(this.graph.GetGraphID(), nodeId, "Graph", "GraphStartNode");
 	}
 	
 }

@@ -14,6 +14,7 @@ class ExecuteNode extends Node
 	// 逻辑退出
 	private var outSlotId:String = "Out";
 	
+	private var tips:String;
 	
 	public function new(owner:Graph) 
 	{
@@ -21,6 +22,16 @@ class ExecuteNode extends Node
 		
 		AddSlot(Slot.INITIALIZE_SLOT(inSlotId, SlotType.ExecutionIn));
 		AddSlot(Slot.INITIALIZE_SLOT(outSlotId, SlotType.ExecutionOut));
+	}
+	
+	public function GetTips():String
+	{
+		return tips;
+	}
+	
+	public function SetTips(tip:String):Void
+	{
+		this.tips = tip;
 	}
 	
 }

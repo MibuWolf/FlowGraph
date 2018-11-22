@@ -20,6 +20,8 @@ class MethodInfo
 	// 返回参数类型
 	private var result:Datum;
 	
+	private var tips:String;
+	
 	public function new(cName:String, mName:String) 
 	{
 		className = cName;
@@ -29,6 +31,15 @@ class MethodInfo
 		result = null;
 	}
 	
+	public function GetTips():String
+	{
+		return tips;
+	}
+	
+	public function SetTips(tip:String):Void
+	{
+		this.tips = tip;
+	}
 	
 	// 获取类名
 	public function GetClassName():String

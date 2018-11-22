@@ -27,16 +27,16 @@ class LayBoxParamData
 	
 	
 	// 获取类型名称
-	private static function GetTypeName(type:DatumType):String
+	public static function GetTypeName(type:DatumType):String
 	{
 		if(type == DatumType.BOOL)
-			return "bool";
+			return "boolean";
 		
 		if(type == DatumType.INT)
 			return "int";
 				
 		if(type == DatumType.FLOAT)
-			return "float";
+			return "number";
 				
 		if(type == DatumType.STRING)
 			return "string";
@@ -54,15 +54,15 @@ class LayBoxParamData
 	
 	
 	// 获取类型名称
-	private static function GetTypeByName(type:String):DatumType
+	public static function GetTypeByName(type:String):DatumType
 	{
-		if(type == "bool")
+		if(type == "boolean")
 			return DatumType.BOOL;
 		
 		if(type == "int")
 			return DatumType.INT;
 				
-		if(type == "float")
+		if(type == "number")
 			return DatumType.FLOAT;
 				
 		if(type == "string")
@@ -124,7 +124,7 @@ class LayBoxParamData
 		
 		if (type == DatumType.USERID)
 		{
-			if(data != "")
+			if(data != "" && data != "0")
 				return ReflectHelper.GetInstance().CreateLogicData("userid", Std.parseInt(data));
 			else
 				return null;

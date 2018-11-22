@@ -1,6 +1,9 @@
 package core.serialization.laybox;
 import core.graph.Graph;
+import core.node.ExecuteNode;
 import core.node.Node;
+import core.node.customs.SwitchExecuteNode;
+import core.node.graphnode.GraphEndNode;
 import core.node.graphnode.GraphNode;
 import core.node.logic.AndNode;
 import core.node.logic.IfNode;
@@ -11,6 +14,8 @@ import core.node.logic.StringCompareNode;
 import core.node.logic.FloatCompareNode;
 import core.node.reflect.MethodNode;
 import core.node.reflect.ReflectTriggerNode;
+import core.node.varible.VariableGetNode;
+import core.node.varible.VariableSetNode;
 import haxe.Json;
 import reflectclass.ClassInfo;
 import reflectclass.MethodInfo;
@@ -18,6 +23,10 @@ import reflectclass.ReflectHelper;
 import reflectclass.TriggerInfo;
 import core.node.event.GraphStartNode;
 import core.datum.Datum;
+import core.manager.GraphManager;
+import core.serialization.laybox.LayBoxParamData;
+import reflectclass.CustomNodeInfo;
+import core.node.customs.CustomExecuteNode;
 /**
  * ...
  * @author MibuWolf
@@ -58,10 +67,42 @@ class LayBoxGraphData
 		
 		var keyNameList:Array<String> = Reflect.fields(jsonGraphData);
 		
+		ParseCustomNodeTemplete(jsonGraphData, graph);
+		
+		var graphName:String = Reflect.getProperty(jsonGraphData, "name");
+		graph.SetGraphName(graphName);
+		
+		var variables:Dynamic = Reflect.getProperty(jsonGraphData, "variables");
+		if (variables != null) 
+		{
+			var varNaleList:Array<String> = Reflect.fields(variables);
+			for (varItem in varNaleList)
+			{
+				var data:Datum = new Datum();
+				var obj1:Dynamic = Reflect.field(variables, varItem);
+				
+				var memList:Array<String> = Reflect.fields(obj1);
+				var memItem:String = memList[0];
+				var dv:Dynamic = Reflect.field(obj1, memItem);
+				
+				var type:Any = LayBoxParamData.GetTypeByName(memItem);
+				if (type == DatumType.USERID) 
+				{
+					data = Datum.INITIALIZE_USERID(varItem, dv);
+				}
+				else
+				{
+					data.Initialize(type, dv, varItem);
+				}
+				
+				graph.AddVarible(data.GetName(), data.Clone());
+			}
+		}
+		
 		
 		for (keyName in keyNameList)
 		{
-			if (keyName == "event" || keyName == "name")
+			if (keyName == "event" || keyName == "name" || keyName == "variables")
 				continue;
 				
 			if (keyName == "children_flow_graph_call")
@@ -75,6 +116,27 @@ class LayBoxGraphData
 		
 		return graph;
 	}
+	//解析流图自定义模块数据
+	private function ParseCustomNodeTemplete(jsonGraphData:Dynamic, graph:Graph):Void
+	{
+		
+		var customNodeTempletes:Array<Dynamic> = Reflect.getProperty(jsonGraphData, "custom_nodes");
+		
+		if (customNodeTempletes != null) 
+		{
+			for (templeteItem in customNodeTempletes)
+			{
+				var groupName:String = Reflect.getProperty(templeteItem, "category");
+				var nodeName:String = Reflect.getProperty(templeteItem, "name");
+				var type:String = Reflect.getProperty(templeteItem, "type");
+				var subType:String = Reflect.getProperty(templeteItem, "subType");
+				var dataInfo: CustomNodeInfo = new CustomNodeInfo(groupName, nodeName, type, subType);
+				dataInfo.Initialize(templeteItem);
+				var nodeIdentity:String = groupName+"_"+nodeName;
+				graph.AddCustomNodeTemplete(nodeIdentity,dataInfo);
+			}
+		}
+	}
 	
 	
 	// 初始化节点及关联信息
@@ -87,34 +149,61 @@ class LayBoxGraphData
 		var className:String = Reflect.getProperty(jsonNodeData, "category");
 		var subFlowGraph:String = Reflect.getProperty(jsonNodeData, "children_flow_graph_name");
 		
-		if (nodeName == null || className == null)
+		if (nodeName == null && subFlowGraph == null && className == null)
 			return;
 		
 		var node:Any = null;
 		var inputParam:Dynamic = Reflect.getProperty(jsonNodeData, "input");
 		var nextParam:Dynamic = Reflect.getProperty(jsonNodeData, "next");
+		var type:String = Reflect.getProperty(jsonNodeData, "type");
+		var varName:String = Reflect.getProperty(jsonNodeData, "varName");
 		
+		if (type == null) 
+		{
+			return;
+		}
 		// 配合服务器消息数据结构
-		if (subFlowGraph != null)
-		{
-			node = CreateFlowGraphNode(graph, nodeID, subFlowGraph);
-		}
-		else
-		{
-			if(className == "Logic")
-			{
-				node = CreateLogicNode(graph,nodeID,nodeName,inputParam);
-			}
-			else if(className == "Graph" && nodeName == "GraphStartNode")
-			{
-				node = CreateGraphStartNode(graph,nodeID);
-			}
-			else
-			{
-				node = CreateReflectNode(graph,nodeID,className,nodeName,inputParam);
-			}
-		}
 		
+		if (type == NodeType.graph.getName())
+		{
+			node = CreateFlowGraphNode(graph, nodeID, subFlowGraph, inputParam);
+		}
+		else if (type == NodeType.custom.getName())
+		{
+			var tempName:String = className +"_" + nodeName;
+			var customTemp:CustomNodeInfo = graph.GetCustomNodeTemplete(tempName);
+			if (customTemp != null) 
+			{
+				if (customTemp.GetCustomSubType() == NodeSubType.Bridge.getName()) 
+				{
+					node = CreateCustomGraphNode(graph, nodeID, className, nodeName); 
+				}
+				else if (customTemp.GetCustomSubType() == NodeSubType.Switch.getName()) 
+				{
+					node = CreateSwitchGraphNode(graph, nodeID, className, nodeName); 
+				}
+			}
+		}
+		else if (type == NodeType.logic.getName())
+		{
+			node = CreateLogicNode(graph,nodeID,nodeName,inputParam);
+		}
+		else if (type == NodeType.variable.getName())
+		{
+			node = CreateVariableGraphNode(graph,nodeID,nodeName, inputParam, varName);
+		}
+		else if (type == NodeType.start.getName())
+		{
+			node = CreateGraphStartNode(graph,nodeID);
+		}
+		else if (type == NodeType.end.getName()) 
+		{
+			node = CreateGraphEndNode(graph, nodeID);
+		}
+		else if (type == NodeType.ctrl.getName() || type == NodeType.event.getName())
+		{
+			node = CreateReflectNode(graph,nodeID,className,nodeName,inputParam);
+		}
 		
 		if (node == null)
 			return;
@@ -159,14 +248,64 @@ class LayBoxGraphData
 		
 	}
 	
+	private function CreateCustomGraphNode(graph:Graph, nodeID:Int,className:String, nodeName:String):Node
+	{
+		var node:CustomExecuteNode = new CustomExecuteNode(graph);
+		var identity:String = className +"_" + nodeName;
+		var info:CustomNodeInfo = graph.GetCustomNodeTemplete(identity);
+		if (info != null) 
+		{
+			node.Initialize(nodeID, NodeType.custom, nodeName, className);
+			node.Initialization(info);
+		}
+		
+		return node;
+	}
+	
+	private function CreateSwitchGraphNode(graph:Graph, nodeID:Int,className:String, nodeName:String):Node
+	{
+		var node:SwitchExecuteNode = new SwitchExecuteNode(graph);
+		var identity:String = className +"_" + nodeName;
+		var info:CustomNodeInfo = graph.GetCustomNodeTemplete(identity);
+		if (info != null) 
+		{
+			node.Initialize(nodeID, NodeType.custom, nodeName, className);
+			node.Initialization(info);
+		}
+		
+		return node;
+	}
+	
+	private function CreateVariableGraphNode(graph:Graph, nodeID:Int, nodeName:String,input:Dynamic, varName:String):Node
+	{
+		var varNode: Dynamic = null;
+		if (input != null) 
+		{
+			varNode = new VariableSetNode(graph);
+			var nodeData:Datum = graph.GetVariableData(varName);
+			SetDefaultValue(nodeData, input);
+			varNode.Initialize(nodeID, NodeType.variable, nodeName, "VariableGraph");
+			varNode.Initialization(nodeData.Clone());
+		}
+		else
+		{
+			varNode = new VariableGetNode(graph);
+			var nodeData:Datum = graph.GetVariableData(varName);
+			varNode.Initialize(nodeID, NodeType.variable, nodeName, "VariableGraph");
+			varNode.Initialization(nodeData.Clone());
+		}
+		return varNode;
+	}
+	
 	// 创建流图节点类型节点
-	private function CreateFlowGraphNode(graph:Graph, nodeID:Int, subFlowGrapName:String):Node
+	private function CreateFlowGraphNode(graph:Graph, nodeID:Int, subFlowGrapName:String,inputParam:Dynamic):Node
 	{
 		var graphNode:GraphNode = new GraphNode(graph);
-		graphNode.Initialize(nodeID, NodeType.GRAPHNODE, subFlowGrapName, "GraphNode");
+		graphNode.Initialize(nodeID, NodeType.graph, subFlowGrapName, "GraphNode");
 		
-		var subGraph:Graph = GraphFormJson(subFlowGrapName,-1,graph.GetOwnerID());
-		graphNode.SetGraph(subGraph);
+		var subGraphID:Int = GraphManager.GetInstance().AddGraph(subFlowGrapName, graph.GetOwnerID());
+		var subGraph:Graph = GraphManager.GetInstance().GetGraph(subGraphID);
+		graphNode.SetGraph(subGraph, inputParam);
 		
 		return graphNode;
 	}
@@ -178,7 +317,7 @@ class LayBoxGraphData
 		
 		switch(nodeName)
 		{
-			case "If":
+			case "Branch":
 				{
 					logicNode = new IfNode(graph);
 					
@@ -223,7 +362,7 @@ class LayBoxGraphData
 		}
 		
 		if (logicNode != null)
-			logicNode.Initialize(nodeID, NodeType.LOGIC, nodeName, "Logic");
+			logicNode.Initialize(nodeID, NodeType.logic, nodeName, "Logic");
 		
 		return logicNode;
 		
@@ -274,7 +413,7 @@ class LayBoxGraphData
 		if (methodInfo != null)
 		{
 			var methodNode:MethodNode = new MethodNode(graph);
-			methodNode.Initialize(nodeID, NodeType.METHOD, nodeName, className);
+			methodNode.Initialize(nodeID, NodeType.ctrl, nodeName, className);
 			var runtimeInfo:MethodInfo = methodInfo.Clone();
 			
 			runtimeInfo.SetDefaultEntityID(graph.GetOwnerID());
@@ -309,59 +448,69 @@ class LayBoxGraphData
 		}
 		else
 		{
+			var defaultInfo:TriggerInfo = ReflectHelper.GetInstance().GetClassInfo(className).GetCallBack(nodeName);
+			
+			if (defaultInfo == null)
+				return null;
+				
 			// 创建触发节点
-			var triggerInfo:TriggerInfo = classInfo.GetCallBack(nodeName);
-							
-			if (triggerInfo != null)
+			var triggerNode:ReflectTriggerNode = new ReflectTriggerNode(graph);
+			triggerNode.Initialize(nodeID, NodeType.event, nodeName, className);
+				
+			var triggerInfo:TriggerInfo = defaultInfo.Clone();
+				
+			triggerInfo.SetDefaultEntityID(graph.GetOwnerID());
+				
+			if(inputParam != null)
 			{
-				var triggerNode:ReflectTriggerNode = new ReflectTriggerNode(graph);
-				triggerNode.Initialize(nodeID, NodeType.TRIGGER, nodeName, className);
-				var triggerInfo:TriggerInfo = ReflectHelper.GetInstance().GetClassInfo(className).GetCallBack(nodeName);
+				var valueNameList:Array<String> = Reflect.fields(inputParam);
 				
-				triggerInfo.SetDefaultEntityID(graph.GetOwnerID());
-				
-				if(inputParam != null)
+				for (valueName in valueNameList)
 				{
-					var valueNameList:Array<String> = Reflect.fields(inputParam);
-				
-					for (valueName in valueNameList)
-					{
-						var valueInfo:Dynamic = Reflect.getProperty(inputParam, valueName);
+					var valueInfo:Dynamic = Reflect.getProperty(inputParam, valueName);
 					
-						if (Reflect.hasField(valueInfo, "defaultValue"))
-						{
-							var value:Any = Reflect.getProperty(valueInfo, "defaultValue");
-							var runTimeValue:Any = LayBoxParamData.GetInstance().StrToAny(value,triggerInfo.GetParamType(valueName));
+					if (Reflect.hasField(valueInfo, "defaultValue"))
+					{
+						var value:Any = Reflect.getProperty(valueInfo, "defaultValue");
+						var runTimeValue:Any = LayBoxParamData.GetInstance().StrToAny(value,triggerInfo.GetParamType(valueName));
 						
-							if (triggerInfo.GetParamType(valueName) == DatumType.USERID)
-							{
-								if(runTimeValue != null)
-									triggerInfo.SetParam(valueName, runTimeValue);
-							}
-							else
-							{
+						if (triggerInfo.GetParamType(valueName) == DatumType.USERID)
+						{
+							if(runTimeValue != null)
 								triggerInfo.SetParam(valueName, runTimeValue);
-							}
+						}
+						else
+						{
+							triggerInfo.SetParam(valueName, runTimeValue);
 						}
 					}
 				}
-			
-				triggerNode.Initialization(triggerInfo);
-			
-				return triggerNode;
 			}
+			
+			triggerNode.Initialization(triggerInfo);
+			
+			return triggerNode;
 							
 		}
 		
 		return null;
 	}
-
+	
+	
+	// 创建流图开始节点回调
+	private function CreateGraphEndNode(graph:Graph, nodeID:Int):Node
+	{
+		var endNode:GraphEndNode = new GraphEndNode(graph);
+		endNode.Initialize(nodeID, NodeType.end, "EndGraph", "Graph"); 
+			
+		return endNode;
+	}
 	
 	// 创建流图开始节点回调
 	private function CreateGraphStartNode(graph:Graph, nodeID:Int):Node
 	{
 		var triggerNode:GraphStartNode = new GraphStartNode(graph);
-		triggerNode.Initialize(nodeID, NodeType.TRIGGER, "GraphStartNode", "Graph");
+		triggerNode.Initialize(nodeID, NodeType.start, "GraphStartNode", "Graph");
 			
 		return triggerNode;
 	}

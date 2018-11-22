@@ -12,6 +12,7 @@ class LogicBaseNode extends ExecuteNode
 
 	private var slotTrue:String;
 	private var slotFalse:String;
+	//private var slotIn:String;
 	
 	public function new(owner:Graph) 
 	{
@@ -19,12 +20,14 @@ class LogicBaseNode extends ExecuteNode
 		
 		slotTrue = "True";
 		slotFalse = "False";
+		//slotIn = "In";
 		
+		//AddSlot(Slot.INITIALIZE_SLOT(slotIn, SlotType.ExecutionIn));
 		AddSlot(Slot.INITIALIZE_SLOT(slotTrue, SlotType.ExecutionOut));
 		AddSlot(Slot.INITIALIZE_SLOT(slotFalse, SlotType.ExecutionOut));
 		
 		this.groupName = "Logic";
-		type = NodeType.LOGIC;
+		type = NodeType.logic;
 	}
 	
 	
@@ -48,6 +51,7 @@ class LogicBaseNode extends ExecuteNode
 	{
 		if (inSlotId != slotId)
 			return;
+		
 			
 		var result:Bool = Evaluate();
 		

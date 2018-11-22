@@ -81,4 +81,15 @@ class Slot
         
 		return slot;
 	}
+	
+	public function Clone():Slot
+	{
+		return INITIALIZE_SLOT(slotId, slotType);
+	}
+	
+	// 清理
+	public function Release()
+	{
+		slotId = "";
+	}
 }

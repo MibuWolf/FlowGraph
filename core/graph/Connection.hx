@@ -1,7 +1,6 @@
 package core.graph;
 import core.node.Node;
 import core.slot.Slot;
-import haxe.io.Bytes;
 /**
  * ...
  * @author MibuWolf

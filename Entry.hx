@@ -30,9 +30,17 @@ class Entry
 	
 	public static function main() :Void
 	{
+		if (NodeType.DATA.getName() == "DATA") 
+		{
+			trace(NodeType.DATA);
+		}
+		else
+		{
+			trace("Error");
+		}
 		// 测试Graph
 		
-		StudentMgr.GetInstance().ReflectToGraph();
+		/*StudentMgr.GetInstance().ReflectToGraph();
 		TestOutPut.GetInstance().ReflectToGraph();
 		MathUtils.GetInstance().ReflectToGraph();
 		
@@ -65,6 +73,8 @@ class Entry
 		subgraph.AddConnection(1, "Value", 2, "vv");
 		subgraph.AddConnection(2, "Out", 3, "In");
 		subgraph.AddConnection(2, "Value", 3, "vv");
+		
+		trace(NodeType.DATA);
 		//subgraph.AddConnection(3, "Out", 4, "In");
 		//subgraph.AddConnection(3, "Value", 4, "iValue");
 		
@@ -158,7 +168,7 @@ class Entry
 		graph.AddConnection(10, "Value", 12, "iValue");
 		graph.AddConnection(6,"Out",5,"In");
 
-		star.OnTrigger(null);
+		star.OnTrigger(null);*/
 		
 		/*StudentMgr.GetInstance().OnTrigger(1);
 		
